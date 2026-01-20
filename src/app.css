@@ -1,0 +1,223 @@
+:root {
+  --primary-color: #137fec;
+  --background-light: #f6f7f8;
+  --background-dark: #101922;
+  --text-primary: #111418;
+  --text-secondary: #617589;
+  --border-color: #dbe0e6;
+}
+
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  src: url('./assets/fonts/MaterialSymbolsOutlined.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-size: 20px;
+  line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+  font-feature-settings: 'liga';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Lexend', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background-color: var(--background-light);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.page {
+  min-height: 100vh;
+  background-color: var(--background-light);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border-color);
+  padding: 12px 16px;
+  z-index: 40;
+}
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.button-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(19, 127, 236, 0.25);
+}
+
+.button-primary:hover {
+  background-color: #0e6bbd;
+  transform: translateY(-1px);
+}
+
+.button-primary:active {
+  transform: scale(0.98);
+}
+
+.button-secondary {
+  background-color: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 500;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button-secondary:hover {
+  background-color: #f8f9fa;
+}
+
+.button-secondary:active {
+  transform: scale(0.98);
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.2s;
+  border-radius: 20px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--primary-color);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.dark {
+  --background-light: var(--background-dark);
+  --text-primary: white;
+  --text-secondary: #a0aec0;
+  --border-color: #2d3748;
+}
+
+.dark .header {
+  background-color: rgba(16, 25, 34, 0.8);
+}
+
+.dark .footer {
+  background-color: rgba(16, 25, 34, 0.95);
+}
+
+.dark .card {
+  background-color: #1a202c;
+  border-color: #2d3748;
+}
+
+.dark .button-secondary {
+  background-color: #2d3748;
+  color: white;
+  border-color: #4a5568;
+}
+
+.dark .button-secondary:hover {
+  background-color: #4a5568;
+}
+
+.dark .input-field {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  color: white;
+}

@@ -1,0 +1,292 @@
+.login-container,
+.app-container {
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+}
+
+.login-card {
+  padding: 40px;
+  text-align: center;
+}
+
+.login-header {
+  margin-bottom: 32px;
+}
+
+.logo-box {
+  width: 64px;
+  height: 64px;
+  background: var(--primary);
+  color: white;
+  border-radius: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 16px rgba(26, 115, 232, 0.3);
+}
+
+.login-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.login-header p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.input-group input {
+  width: 100%;
+  height: 52px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 16px;
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .input-group input {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.input-group input:focus {
+  outline: none;
+  background: transparent;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1);
+}
+
+.login-btn {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.login-footer {
+  margin-top: 32px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Chat Styles */
+.chat-container {
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.assistant-avatar {
+  background: var(--primary);
+  color: white;
+}
+
+.header-info h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.status-indicator {
+  font-size: 11px;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-indicator::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.logout-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ef4444;
+}
+
+.messages-area {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+.message-row {
+  display: flex;
+  width: 100%;
+}
+
+.message-row.user {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.message-bubble.assistant {
+  background: var(--bubble-ai);
+  color: var(--text-main);
+  border-bottom-left-radius: 4px;
+}
+
+.message-bubble.user {
+  background: var(--bubble-user);
+  color: var(--bubble-user-text);
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.8;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.chat-footer {
+  padding: 20px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.input-wrapper {
+  display: flex;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 14px;
+  padding: 6px;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .input-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.input-wrapper:focus-within {
+  background: transparent;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.input-wrapper input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 12px;
+  font-size: 15px;
+  color: var(--text-main);
+}
+
+.input-wrapper input:focus {
+  outline: none;
+}
+
+.send-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.send-btn:hover:not(.disabled) {
+  transform: scale(1.05);
+  background: var(--primary-hover);
+}
+
+.send-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

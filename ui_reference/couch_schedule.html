@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>教练日程管理</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        .pending-pattern {
+            background-color: #fff7ed;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, #ffedd5 10px, #ffedd5 20px);
+        }
+        .buffer-pattern {
+            background-color: #f3f4f6;
+            background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #e5e7eb 5px, #e5e7eb 10px);
+        }
+        .locked-pattern {
+            background-color: #374151;
+            background-image: repeating-linear-gradient(45deg, #374151, #374151 8px, #4b5563 8px, #4b5563 10px);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111418] dark:text-white antialiased">
+<div class="relative flex min-h-screen w-full flex-col max-w-[480px] mx-auto bg-white dark:bg-background-dark overflow-x-hidden pb-32 shadow-xl">
+<header class="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="flex items-center p-4 pb-2 justify-between">
+<div class="flex size-10 shrink-0 items-center overflow-hidden rounded-full border-2 border-primary/20">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-full" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBUuvU0955WtZOyiiOIY8IMB6UmJdT2GHiDeOM1E-w8etKRs1-nQWJxlQt3pExoWPzd2hGaQKNwsi-26VdVhy2w096bUk2R8_oHpKaxSi55Jaw8yiMjkzdkLesdEN33Oecc2FNhSiDaZzvWwn7qw8wcI3q1Yckd_SB3-CK_zk_gTm6NH8MtwG4UKF3IHchz4HK7Od8BwghPfAY6A4zb9NqafzrOcz_lCOa50YmgkYYwtcTNctRZJmBXUM9Z2pCt4RHrPMWDTL_APRk");'></div>
+</div>
+<h2 class="text-[#111418] dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 px-3">日程管理</h2>
+<div class="flex items-center gap-2">
+<button class="flex items-center justify-center rounded-full size-10 bg-gray-100 dark:bg-gray-800">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+</div>
+</div>
+<div class="flex gap-3 px-4 py-3 overflow-x-auto hide-scrollbar">
+<div class="flex flex-col items-center justify-center min-w-[56px] h-16 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+<p class="text-xs text-gray-500 font-semibold">周一</p>
+<p class="text-base font-bold text-gray-700 dark:text-gray-300">12</p>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-16 rounded-xl bg-primary text-white shadow-lg shadow-primary/30">
+<p class="text-xs text-white/70 font-semibold">周二</p>
+<p class="text-base font-bold">13</p>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-16 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+<p class="text-xs text-gray-500 font-semibold">周三</p>
+<p class="text-base font-bold text-gray-700 dark:text-gray-300">14</p>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-16 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+<p class="text-xs text-gray-500 font-semibold">周四</p>
+<p class="text-base font-bold text-gray-700 dark:text-gray-300">15</p>
+</div>
+<div class="flex flex-col items-center justify-center min-w-[56px] h-16 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+<p class="text-xs text-gray-500 font-semibold">周五</p>
+<p class="text-base font-bold text-gray-700 dark:text-gray-300">16</p>
+</div>
+</div>
+</header>
+<div class="px-4 py-2">
+<div class="flex items-center justify-between rounded-2xl bg-orange-50 border border-orange-100 p-4 dark:bg-orange-900/20 dark:border-orange-900/30">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-10 rounded-full bg-orange-500 text-white">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+<div>
+<p class="text-orange-900 dark:text-orange-100 text-sm font-bold leading-tight">2个新预约申请</p>
+<p class="text-orange-700 dark:text-orange-300 text-xs font-normal">请尽快处理今日申请</p>
+</div>
+</div>
+<button class="bg-orange-500 text-white text-xs font-bold py-2 px-4 rounded-lg hover:bg-orange-600 active:scale-95 transition-transform">去处理</button>
+</div>
+</div>
+<div class="px-4 pt-6 pb-2 flex justify-between items-end">
+<h3 class="text-[#111418] dark:text-white text-xl font-bold tracking-tight">时间轴</h3>
+<span class="text-xs font-medium text-gray-400">上午 08:00 - 晚上 10:00</span>
+</div>
+<div class="flex-1 px-4 relative">
+<div class="absolute left-[39px] top-0 bottom-0 w-[1px] bg-gray-100 dark:bg-gray-800"></div>
+<div class="flex items-center gap-4 h-12">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right">上午</span>
+<div class="z-10 size-2 rounded-full bg-gray-300"></div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right pt-2">09:00</span>
+<div class="z-10 size-2 rounded-full bg-primary mt-2"></div>
+</div>
+<div class="flex-1 pb-4">
+<div class="rounded-2xl bg-primary p-4 text-white shadow-lg shadow-primary/20">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-medium opacity-80 uppercase tracking-wider">网球私教课</p>
+<p class="text-lg font-bold leading-tight mt-1">学员姓名: 陈小强</p>
+</div>
+<span class="material-symbols-outlined opacity-80">verified</span>
+</div>
+<div class="flex items-center gap-3 mt-4 text-sm opacity-90">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>09:00 - 10:00</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+<span>训练地点: 4号场</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right pt-1">10:00</span>
+<div class="z-10 size-2 rounded-full bg-gray-300 mt-2"></div>
+</div>
+<div class="flex-1 pb-4">
+<div class="rounded-xl buffer-pattern border border-gray-100 dark:border-gray-800/50 h-12 flex items-center px-4">
+<p class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">battery_charging_full</span>
+                        休息 (15分钟)
+                    </p>
+</div>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right pt-1">10:15</span>
+<div class="z-10 size-2 rounded-full bg-gray-700 mt-2"></div>
+</div>
+<div class="flex-1 pb-4">
+<div class="rounded-xl locked-pattern border border-gray-700 h-16 flex flex-col justify-center px-4 shadow-sm relative overflow-hidden">
+<div class="absolute inset-0 bg-black/10"></div>
+<div class="relative z-10 flex justify-between items-center">
+<div class="flex flex-col">
+<p class="text-xs font-bold text-gray-300 uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">lock</span>
+                                已锁定
+                            </p>
+<p class="text-[10px] text-gray-400 mt-0.5">私人时间 · 不接受预约</p>
+</div>
+<button class="text-gray-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-lg">edit_off</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 h-12">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right">下午</span>
+<div class="z-10 size-2 rounded-full bg-gray-200"></div>
+<div class="h-[1px] flex-1 bg-gray-50 dark:bg-gray-800"></div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right pt-2">11:00</span>
+<div class="z-10 size-2 rounded-full bg-orange-400 mt-2"></div>
+</div>
+<div class="flex-1 pb-4">
+<div class="rounded-2xl pending-pattern border-2 border-orange-200 p-4 dark:border-orange-900/50">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-2">
+<p class="text-xs font-bold text-orange-600 uppercase tracking-wider">待处理申请</p>
+<div class="size-1.5 rounded-full bg-orange-500 animate-pulse"></div>
+</div>
+<p class="text-lg font-bold text-gray-900 dark:text-white leading-tight mt-1">学员姓名: 张美玲</p>
+</div>
+<div class="bg-white/80 dark:bg-gray-800/80 px-2 py-1 rounded text-[10px] font-bold text-orange-600">最新</div>
+</div>
+<div class="flex items-center gap-3 mt-3 text-sm text-gray-600 dark:text-gray-400">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>11:00 - 12:00</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+<span>训练地点: 中心球场</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3 mt-5">
+<button class="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 active:bg-gray-200">
+<span class="material-symbols-outlined text-lg">close</span>
+                            拒绝
+                        </button>
+<button class="bg-primary text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+                            通过
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<div class="flex gap-4 group">
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right pt-2">13:00</span>
+<div class="z-10 size-2 rounded-full bg-gray-200 mt-2"></div>
+</div>
+<div class="flex-1 pb-4">
+<button class="w-full border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl py-3 flex items-center justify-center gap-2 text-gray-400 hover:border-primary/40 hover:text-primary transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-xl">add_circle</span>
+<span class="text-sm font-medium">点击锁定时间</span>
+</button>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right pt-2">14:00</span>
+<div class="z-10 size-2 rounded-full bg-primary mt-2"></div>
+</div>
+<div class="flex-1 pb-4">
+<div class="rounded-2xl bg-gray-900 dark:bg-primary/20 border-l-4 border-primary p-4 text-white">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-medium text-primary uppercase tracking-wider">团体课</p>
+<p class="text-lg font-bold leading-tight mt-1 text-white">进阶技巧训练</p>
+</div>
+<div class="flex -space-x-2">
+<div class="size-6 rounded-full border border-gray-900 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCojE7cB0Q5Oji-r9j-QFhR5TCsnxKL6UoTJM6hkjUGeh7aVpBFLzHMHPzGVaMr1EUGsgf3Oi3xzcUDSgMm1WIUMaTbv8iKS0rPrc5cyR-ZYajFVh3KwSrwCzrwwFfvR6o88s56L7iaRB86cDhesHP87c-_kV463gksZgHrFCOytgmSK-iggTKO-lXueOUaefbA0P5xi39NBV-l0kCDd-q3-G7em8GV3xCX6jk9b0eXXJXw11cxJOy7CJ5_Cjz39UMU9ICqj-UUAs0");'></div>
+<div class="size-6 rounded-full border border-gray-900 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBLmoCx6__DHUMxkmg-zzXfdWgEVL0qK48lHNVaxiIPKfbdlBsDojOOjZs_tEonGrw4Ioox2mcF1_ouFwOqJrSlDiGIvT5RViu30n4cgAa7zEcuRvxrzyMl6JPOyw8zWfEZLLup_FJ2BgncNOIpCfKBC9U5oBj5-k-xrLUyytTIDL7Dl4dlzG8RgENlEI2FaKUMl9sgvB3f8YWN0tjWgSB37snuSlgs3AyYMLdpMRyn8Qqopg9LAabFSDQ3xwfCjohsp3Vm-rq86eU");'></div>
+<div class="size-6 rounded-full border border-gray-900 bg-gray-700 flex items-center justify-center text-[10px] font-bold">+4</div>
+</div>
+</div>
+<div class="flex items-center gap-3 mt-4 text-sm opacity-90">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>14:00 - 15:30</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+<span>训练地点: 2号场</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 h-12">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right">晚上</span>
+<div class="z-10 size-2 rounded-full bg-gray-300"></div>
+<div class="h-[1px] flex-1 bg-gray-50 dark:bg-gray-800"></div>
+</div>
+<div class="flex items-center gap-4 h-12">
+<span class="text-[10px] font-bold text-gray-400 w-8 text-right">22:00</span>
+<div class="z-10 size-2 rounded-full bg-gray-300"></div>
+</div>
+</div>
+<button class="fixed bottom-28 right-6 size-14 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-2xl flex items-center justify-center z-[70] active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-2xl">lock_open</span>
+</button>
+<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white/95 dark:bg-background-dark/95 backdrop-blur-lg border-t border-gray-100 dark:border-gray-800 px-8 py-3 pb-8 flex justify-between items-center z-[60]">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined font-variation-fill-1">calendar_today</span>
+<span class="text-[10px] font-bold">日程</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400">
+<span class="material-symbols-outlined">group</span>
+<span class="text-[10px] font-bold">学员</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold">统计</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-bold">设置</span>
+</button>
+</nav>
+</div>
+
+</body></html>

@@ -1,0 +1,11 @@
+{
+  "pages": [
+    "pages/coach/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "教练助手",
+    "navigationBarTextStyle": "black"
+  }
+}

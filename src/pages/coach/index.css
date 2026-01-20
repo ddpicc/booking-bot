@@ -1,0 +1,872 @@
+/* 优化后的教练首页样式，采用渐变背景与玻璃质感卡片 - 完全复刻版 */
+:root {
+  --coach-page-gradient: #ffffff;
+  --coach-card-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 247, 255, 0.9));
+  --coach-surface: rgba(255, 255, 255, 0.86);
+  --coach-border-soft: rgba(15, 23, 42, 0.12);
+  --coach-shadow-soft: 0 20px 45px rgba(15, 23, 42, 0.15);
+  --coach-shadow-highlight: 0 12px 28px rgba(19, 127, 236, 0.25);
+
+  --primary-blue: #1a73e8;
+  /* Google Blue style */
+  --primary-blue-gradient: linear-gradient(135deg, #4285f4, #1967d2);
+
+  --text-dark: #202124;
+  --text-grey: #5f6368;
+}
+
+.coach-page {
+  min-height: 100vh;
+  background: #ffffff;
+  position: relative;
+  overflow-x: hidden;
+  max-width: 100vw;
+  box-sizing: border-box;
+  padding: 180px 0 120px;
+  color: #202124;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Header */
+.coach-header {
+  padding: calc(16px + env(safe-area-inset-top)) 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.coach-header-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: #eee;
+}
+
+.coach-header-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #202124;
+}
+
+.coach-header-action {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f1f3f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.coach-header-icon {
+  font-size: 24px;
+  color: #202124;
+}
+
+/* Date Nav */
+.coach-nav-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 10px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-sizing: border-box;
+}
+
+.coach-nav {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.coach-nav-scroll {
+  width: 100%;
+}
+
+.coach-nav-scroll-inner {
+  display: flex;
+  gap: 12px;
+  padding-right: 20px;
+  /* Space for the fade effect and last item */
+}
+
+.coach-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Adjust width so 5 items are fully visible and the 6th is slightly clipped */
+  flex: 0 0 calc((100vw - 40px - 48px - 8px - 60px) / 5.3);
+  height: 85px;
+  border-radius: 16px;
+  background: #f8f9fa;
+  gap: 2px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.coach-nav-item.active {
+  background-color: #1a73e8;
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(66, 133, 244, 0.3);
+}
+
+.coach-nav-active-indicator {
+  position: absolute;
+  bottom: 8px;
+  width: 16px;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+.coach-nav-item.active .coach-nav-day,
+.coach-nav-item.active .coach-nav-date {
+  color: #fff;
+}
+
+.coach-nav-day {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.coach-nav-date {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.coach-nav-fade {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, #fff);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.coach-nav-picker {
+  width: 48px;
+  height: 48px;
+  background: #f1f3f4;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.coach-nav-picker-icon {
+  font-size: 24px;
+  color: #5f6368;
+}
+
+.coach-nav-scroll-end-spacer {
+  flex: 0 0 20px;
+}
+
+/* Content Area */
+.coach-content {
+  padding: 0;
+}
+
+.coach-content-inner {
+  padding: 16px 24px 120px;
+  box-sizing: border-box;
+}
+
+/* Alert Banner */
+.coach-alert {
+  background: #fff8f0;
+  /* Light peach/orange */
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  box-sizing: border-box;
+}
+
+.coach-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.coach-alert-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f97316;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.coach-alert-icon-symbol {
+  font-size: 28px;
+  /* Larger icon */
+}
+
+.coach-alert-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coach-alert-title {
+  font-size: 18px;
+  /* Larger */
+  font-weight: 800;
+  color: #9a3412;
+}
+
+.coach-alert-subtitle {
+  font-size: 14px;
+  color: #c2410c;
+  font-weight: 500;
+}
+
+.coach-alert-button {
+  background: #f97316;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4);
+}
+
+/* Timeline Header */
+.coach-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  box-sizing: border-box;
+}
+
+.coach-section-title {
+  font-size: 24px;
+  /* Larger */
+  font-weight: 900;
+  color: #202124;
+}
+
+.coach-section-subtitle {
+  font-size: 14px;
+  color: #9aa0a6;
+  font-weight: 500;
+}
+
+/* Timeline Grid */
+.coach-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+.coach-timeline-period {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: 56px;
+}
+
+.coach-timeline-period-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #9aa0a6;
+}
+
+.coach-timeline-period-dot {
+  width: 10px;
+  height: 10px;
+  background: #e8eaed;
+  border-radius: 50%;
+}
+
+.coach-timeline-item {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  /* Ensure full width usage */
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.coach-timeline-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48px;
+  /* Fixed width */
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.coach-timeline-time-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5f6368;
+  margin-bottom: 8px;
+}
+
+.coach-timeline-time-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1a73e8;
+  /* Blue dot */
+  z-index: 2;
+}
+
+.coach-timeline-time-dot.pending {
+  background: #f97316;
+}
+
+/* Booking Cards */
+.coach-timeline-content {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
+  /* Important for flex child to respect container width */
+  box-sizing: border-box;
+  max-width: 100%;
+  padding-right: 6px;
+  /* Keep card outline visible on the right edge */
+}
+
+.coach-booking-card {
+  border-radius: 20px;
+  padding: 20px;
+  color: #202124;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Confirmed Card (Blue) */
+.coach-booking-card.confirmed {
+  background: linear-gradient(135deg, #4285f4, #1967d2);
+  color: white;
+  box-shadow: 0 10px 25px rgba(26, 115, 232, 0.3);
+}
+
+.coach-booking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.coach-booking-type {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.coach-booking-title {
+  font-size: 22px;
+  /* Larger */
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.coach-booking-icon {
+  font-size: 24px;
+}
+
+.coach-booking-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coach-booking-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+/* Locked Card */
+.coach-booking-card.locked {
+  background: #202124;
+  /* Dark grey/black */
+  color: white;
+  /* Diagonal stripes */
+  background-image: repeating-linear-gradient(45deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 10px);
+}
+
+.coach-booking-locked-hint {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-top: 8px;
+}
+
+/* Buffer (Rest) */
+.coach-buffer {
+  background: repeating-linear-gradient(45deg,
+      #f8f9fa,
+      #f8f9fa 10px,
+      #fff 10px,
+      #fff 20px);
+  border-radius: 16px;
+  padding: 16px;
+  color: #9aa0a6;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed #dadce0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Pending Card */
+.coach-booking-card.pending {
+  background: #fff8f0;
+  /* Light orange */
+  /* Subtle diagonal stripes pattern */
+  background-image: repeating-linear-gradient(45deg,
+      rgba(249, 115, 22, 0.03),
+      rgba(249, 115, 22, 0.03) 1px,
+      transparent 1px,
+      transparent 10px);
+  border: 1px solid rgba(249, 115, 22, 0.1);
+}
+
+.coach-booking-card.pending .coach-booking-type {
+  color: #f97316;
+}
+
+.coach-booking-card.pending .coach-booking-title {
+  color: #202124;
+}
+
+.coach-booking-chip {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #fff;
+  color: #f97316;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.coach-booking-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 26px;
+}
+
+.coach-booking-action {
+  flex: 1;
+  height: 80px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid transparent;
+  padding: 0 18px;
+}
+
+.coach-booking-action.reject {
+  background: #ffffff;
+  color: #ef4444;
+  border-color: #fecaca;
+  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.12);
+}
+
+.coach-booking-action.approve {
+  background: linear-gradient(135deg, #1a73e8, #4f8df9);
+  color: white;
+  box-shadow: 0 8px 18px rgba(26, 115, 232, 0.4);
+}
+
+/* Slot (Empty Slot) */
+.coach-empty-slot {
+  width: 100%;
+  padding: 20px;
+  border: 2px dashed #dadce0;
+  border-radius: 20px;
+  background: #f8f9fa;
+  color: #9aa0a6;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.coach-empty-slot-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #5f6368;
+}
+
+.coach-empty-slot-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f6368;
+}
+
+.coach-empty-slot-hint {
+  font-size: 12px;
+  color: #9aa0a6;
+}
+
+/* Lock Modal */
+.coach-lock-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.coach-lock-modal {
+  background: #fff;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.3);
+}
+
+.coach-lock-modal-header {
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.coach-lock-modal-tabs {
+  display: flex;
+  flex: 1;
+}
+
+.coach-lock-modal-tab {
+  flex: 1;
+  padding: 24px 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #5f6368;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.coach-lock-modal-tab.active {
+  color: #1a73e8;
+}
+
+.coach-lock-modal-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: #1a73e8;
+  border-radius: 2px 2px 0 0;
+}
+
+.coach-lock-modal-close {
+  padding: 0 24px;
+  font-size: 20px;
+  color: #9aa0a6;
+}
+
+.coach-lock-modal-content {
+  padding: 24px;
+}
+
+.coach-lock-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.coach-lock-modal-row {
+  display: flex;
+  gap: 16px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.coach-lock-modal-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coach-lock-modal-form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coach-lock-modal-form-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5f6368;
+  margin-left: 4px;
+}
+
+.coach-lock-modal-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1.5px solid #f1f3f4;
+  background: #f8f9fa;
+}
+
+.coach-lock-modal-picker-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #202124;
+}
+
+.coach-lock-modal-picker-icon {
+  color: #9aa0a6;
+  font-size: 14px;
+}
+
+.coach-lock-modal-form-input {
+  background: #f8f9fa;
+  border: 1.5px solid #f1f3f4;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.coach-lock-modal-form-input:focus {
+  border-color: #1a73e8;
+  background: #fff;
+}
+
+.coach-lock-modal-actions {
+  padding: 0 24px 24px;
+}
+
+.coach-lock-modal-button.confirm {
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1a73e8, #1557b0);
+  color: white;
+  font-weight: 800;
+  font-size: 17px;
+  box-shadow: 0 10px 20px rgba(26, 115, 232, 0.2);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Group Lesson Card */
+.coach-booking-card.group {
+  background: #111827;
+  /* Dark background */
+  color: white;
+  border-left: none;
+  /* Removed the side border from previous design */
+}
+
+.coach-booking-card.group .coach-booking-type {
+  color: #4285f4;
+  /* Blue text for "Group Lesson" */
+}
+
+.coach-booking-group-avatars {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.coach-booking-group-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #111827;
+  /* Match background for cut-out effect */
+  margin-left: -12px;
+  /* Overlap */
+  background-size: cover;
+  background-position: center;
+}
+
+.coach-booking-group-avatar:first-child {
+  margin-left: 0;
+}
+
+.coach-booking-group-more {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #374151;
+  border: 2px solid #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  margin-left: -12px;
+  color: white;
+}
+
+/* Floating Button */
+.coach-floating-button {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  background: #111827;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.coach-floating-icon {
+  font-size: 28px;
+  color: white;
+}
+
+/* Bottom Nav */
+.coach-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 12px 0 24px;
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #f1f3f4;
+  z-index: 100;
+}
+
+.coach-nav-item-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #9aa0a6;
+  padding: 8px;
+}
+
+.coach-nav-item-bottom.active {
+  color: #1a73e8;
+}
+
+.coach-nav-item-bottom-icon {
+  font-size: 28px;
+}
+
+.coach-nav-item-bottom-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Text Utilities */
+.text-xl {
+  font-size: 24px;
+}
+
+.text-sm {
+  font-size: 16px;
+}
+
+/* Settings Styles (Preserved mostly, updated colors) */
+.coach-settings-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #5f6368;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.coach-settings-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #f1f3f4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.coach-settings-item {
+  padding: 20px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.coach-toggle-input:checked+.coach-toggle-slider {
+  background-color: #1a73e8;
+}
+
+.coach-service-duration-item.active {
+  background: #1a73e8;
+  color: white;
+}

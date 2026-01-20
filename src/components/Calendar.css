@@ -1,0 +1,195 @@
+/* Calendar 组件样式 */
+.calendar-container {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.calendar-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.calendar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.calendar-nav-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.calendar-weekdays {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.calendar-weekday {
+  flex: 1;
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.calendar-days {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.calendar-day {
+  width: 14.28%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-day.selected {
+  background-color: rgba(19, 127, 236, 0.1);
+  color: var(--primary-color);
+}
+
+.calendar-day.bookable {
+  color: var(--text-primary);
+}
+
+.calendar-day:not(.bookable) {
+  color: #999;
+}
+
+.calendar-day.current-month {
+  font-weight: normal;
+}
+
+.calendar-day:not(.current-month) {
+  color: #ccc;
+}
+
+.calendar-day:hover.bookable {
+  background-color: rgba(19, 127, 236, 0.05);
+}
+
+.calendar-time-slots {
+  margin-top: 30px;
+}
+
+.calendar-time-slots-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 15px;
+}
+
+.calendar-time-slots-container {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.calendar-time-slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.calendar-time-slot {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.calendar-time-slot.available {
+  background-color: rgba(19, 127, 236, 0.05);
+  border: 1px solid rgba(19, 127, 236, 0.4);
+  color: var(--primary-color);
+}
+
+.calendar-time-slot.available:hover {
+  border-color: var(--primary-color);
+}
+
+.calendar-time-slot:not(.available) {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* 暗黑模式适配 */
+.dark .calendar-container {
+  background-color: #1a202c;
+  border-color: #2d3748;
+}
+
+.dark .calendar-title {
+  color: white;
+}
+
+.dark .calendar-weekday {
+  color: white;
+}
+
+.dark .calendar-nav-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.dark .calendar-nav-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark .calendar-day.selected {
+  background-color: rgba(19, 127, 236, 0.2);
+}
+
+.dark .calendar-day.bookable {
+  color: white;
+}
+
+.dark .calendar-day:hover.bookable {
+  background-color: rgba(19, 127, 236, 0.1);
+}
+
+.dark .calendar-time-slots-title {
+  color: white;
+}
+
+.dark .calendar-time-slot.available {
+  background-color: rgba(19, 127, 236, 0.1);
+  border-color: rgba(19, 127, 236, 0.4);
+  color: var(--primary-color);
+}
+
+.dark .calendar-time-slot:not(.available) {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #999;
+}
