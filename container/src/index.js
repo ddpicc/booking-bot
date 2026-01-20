@@ -9,7 +9,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // 初始化云开发 SDK
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
+cloud.init({ env: 'cloud1-8go2n6w41a48657b' });
 const db = cloud.database();
 const _ = db.command;
 
