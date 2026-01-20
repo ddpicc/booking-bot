@@ -130,6 +130,7 @@ app.post('/api/call', async (req, res) => {
     // 云托管中从 Header 获取 OPENID，测试环境下增加兜底
     const OPENID = req.headers['x-wx-openid'] || 'TEST_WEB_USER';
 
+    console.time(`db-${service}-${action}`);
     try {
         if (service === 'students') {
             if (action === 'list') {
@@ -153,7 +154,9 @@ app.post('/api/call', async (req, res) => {
         console.timeEnd(`db-${service}-${action}`);
         res.status(400).json({ ok: false, message: 'Invalid service/action' });
     } catch (e) {
-        res.status(500).json({ ok: false, message: e.message });
+        console.timeEnd(`db-${service}-${action}`);
+        console.error('[DB Operation Error]', e);
+        res.status(500).json({ ok: false, message: e.message, stack: e.stack });
     }
 });
 
