@@ -111,7 +111,20 @@ app.post('/api/assistant', async (req, res) => {
     }
 });
 
-// 2. 统一业务接口 (替代 booking 和 students 云函数)
+// 3. 诊断接口
+app.get('/api/db-check', async (req, res) => {
+    console.time('db-check');
+    try {
+        const result = await db.collection('coaches').limit(1).get();
+        console.timeEnd('db-check');
+        res.json({ ok: true, message: 'Database connected', count: result.data.length });
+    } catch (e) {
+        console.timeEnd('db-check');
+        console.error('[DB Check Failed]', e);
+        res.status(500).json({ ok: false, message: e.message, stack: e.stack });
+    }
+});
+
 app.post('/api/call', async (req, res) => {
     const { service, action, data } = req.body;
     // 云托管中从 Header 获取 OPENID，测试环境下增加兜底
@@ -121,19 +134,23 @@ app.post('/api/call', async (req, res) => {
         if (service === 'students') {
             if (action === 'list') {
                 const result = await db.collection('students').where({ coachId: data.coachId || 'COACH_88888' }).get();
+                console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true, data: result.data });
             }
         }
         if (service === 'booking') {
             if (action === 'deduct') {
                 await db.collection('students').doc(data.studentId).update({ data: { remainingHours: _.inc(-data.hours) } });
+                console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true });
             }
             if (action === 'getCoach') {
                 const result = await db.collection('coaches').doc(data.coachId).get();
+                console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true, data: result.data });
             }
         }
+        console.timeEnd(`db-${service}-${action}`);
         res.status(400).json({ ok: false, message: 'Invalid service/action' });
     } catch (e) {
         res.status(500).json({ ok: false, message: e.message });

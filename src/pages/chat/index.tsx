@@ -31,11 +31,11 @@ const ChatPage: React.FC = () => {
                 coachId: coachId
             }) as any;
 
-            const result: any = res.result;
-            if (result.ok) {
+            const result: any = res.data;
+            if (result && result.ok) {
                 setMessages([...newMessages, { role: 'assistant', content: result.reply }]);
             } else {
-                Taro.showToast({ title: result.message || '请求失败', icon: 'none' });
+                Taro.showToast({ title: result?.message || '请求失败', icon: 'none' });
             }
         } catch (error) {
             console.error('Chat Error:', error);
