@@ -13,6 +13,13 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const _ = db.command;
 
+// 中间件：日志打印，方便排查
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log('Headers:', JSON.stringify(req.headers));
+    next();
+});
+
 // --- 配置集 ---
 const API_KEY = 'sk-M9dAAx2KVKwC0b73XT7XRpyMbMs37Z1jIAqyKPwkjDeeR3ez';
 const API_URL = 'https://www.dmxapi.cn/v1/chat/completions';
@@ -79,8 +86,8 @@ async function handleToolCall(toolCall, coachId, openId) {
 // 1. AI 助手
 app.post('/api/assistant', async (req, res) => {
     const { messages, currentDate, coachId } = req.body;
-    // 云托管中从 Header 获取 OPENID
-    const OPENID = req.headers['x-wx-openid'];
+    // 云托管中从 Header 获取 OPENID，测试环境下增加兜底
+    const OPENID = req.headers['x-wx-openid'] || 'TEST_WEB_USER';
 
     try {
         const response = await axios.post(API_URL, {
@@ -107,8 +114,8 @@ app.post('/api/assistant', async (req, res) => {
 // 2. 统一业务接口 (替代 booking 和 students 云函数)
 app.post('/api/call', async (req, res) => {
     const { service, action, data } = req.body;
-    // 云托管中从 Header 获取 OPENID
-    const OPENID = req.headers['x-wx-openid'];
+    // 云托管中从 Header 获取 OPENID，测试环境下增加兜底
+    const OPENID = req.headers['x-wx-openid'] || 'TEST_WEB_USER';
 
     try {
         if (service === 'students') {
