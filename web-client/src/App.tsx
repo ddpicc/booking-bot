@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-// import axios from 'axios';
+import axios from 'axios';
 import { Send, Bot, Loader2, LogOut, Calendar, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
@@ -11,7 +11,7 @@ interface Message {
 }
 
 // 模拟 API 调用（用户需要替换为真实的微信云函数 HTTP 触发 URL）
-// const CLOUD_FUNCTION_URL = 'https://YOUR_CLOUD_BASE_HTTP_URL/assistant';
+const CLOUD_HOSTING_URL = 'https://booking-bot-219528-8-1388569087.sh.run.tcloudbase.com';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,28 +45,22 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 这里的逻辑需要对接真实的微信云函数 HTTP 访问
-      // 由于环境限制，这里先模拟 AI 回复
-      // 实际使用时，用户需要在微信云开发后台开启“云函数 HTTP 访问”
-
-      /* 
-      const response = await axios.post(CLOUD_FUNCTION_URL, {
+      const response = await axios.post(`${CLOUD_HOSTING_URL}/api/assistant`, {
         messages: messages.concat(userMessage).map(m => ({ role: m.role, content: m.content })),
-        currentDate: new Date().toISOString()
+        currentDate: new Date().toISOString(),
+        coachId: 'COACH_88888'
       });
-      const reply = response.data.reply;
-      */
 
-      // 模拟延迟
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const mockReply: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `好的${username}，我已经收到了您的需求：“${input}”。正在为您查询教练日程... (演示环境下 AI 回复已模拟)`
-      };
-
-      setMessages(prev => [...prev, mockReply]);
+      if (response.data && response.data.ok) {
+        const assistantReply: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: response.data.reply
+        };
+        setMessages(prev => [...prev, assistantReply]);
+      } else {
+        throw new Error(response.data.message || 'Unknown error');
+      }
     } catch (error) {
       console.error('API Error:', error);
       setMessages(prev => [...prev, { id: 'err', role: 'assistant', content: '抱歉，连接助手系统出错，请稍后再试。' }]);
