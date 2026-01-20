@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, Input, Image, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useStore } from '../../store';
+import { callService } from '../../utils';
 import './index.css';
 
 const StudentsPage: React.FC = () => {
@@ -27,10 +28,7 @@ const StudentsPage: React.FC = () => {
     const fetchStudents = async () => {
         setLoading(true);
         try {
-            const res = await Taro.cloud.callFunction({
-                name: 'students',
-                data: { action: 'list' }
-            }) as any;
+            const res = await callService('students', 'list', { coachId: 'COACH_88888' }) as any;
             if (res.result && res.result.ok) {
                 setStudents(res.result.data);
             }
@@ -61,13 +59,9 @@ const StudentsPage: React.FC = () => {
                 if (res.confirm) {
                     Taro.showLoading({ title: '核销中...' });
                     try {
-                        const result = await Taro.cloud.callFunction({
-                            name: 'booking',
-                            data: {
-                                action: 'deduct',
-                                studentId: studentId,
-                                hours: 1
-                            }
+                        const result = await callService('booking', 'deduct', {
+                            studentId: studentId,
+                            hours: 1
                         }) as any;
                         if (result.result && result.result.ok) {
                             updateStudent(studentId, { remainingHours: result.result.remainingHours });
@@ -93,20 +87,16 @@ const StudentsPage: React.FC = () => {
 
         Taro.showLoading({ title: '保存中...' });
         try {
-            const result = await Taro.cloud.callFunction({
-                name: 'students',
+            const result = await callService('students', 'create', {
                 data: {
-                    action: 'create',
-                    data: {
-                        name: newName,
-                        phoneNumber: newPhone,
-                        courseName: newCourse || '未设置课程',
-                        remainingHours: Number(newHours),
-                        totalHours: Number(newHours),
-                        unitPrice: Number(newPrice),
-                        sportType: selectedFilter === '全部' ? '羽毛球' : selectedFilter,
-                        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'
-                    }
+                    name: newName,
+                    phoneNumber: newPhone,
+                    courseName: newCourse || '未设置课程',
+                    remainingHours: Number(newHours),
+                    totalHours: Number(newHours),
+                    unitPrice: Number(newPrice),
+                    sportType: selectedFilter === '全部' ? '羽毛球' : selectedFilter,
+                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'
                 }
             }) as any;
             if (result.result && result.result.ok) {

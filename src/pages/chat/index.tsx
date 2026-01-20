@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, Input, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
+import { callCloudContainer } from '../../utils';
 import './index.css';
 
 const ChatPage: React.FC = () => {
@@ -24,14 +25,11 @@ const ChatPage: React.FC = () => {
         setLoading(true);
 
         try {
-            const res = await Taro.cloud.callFunction({
-                name: 'assistant',
-                data: {
-                    messages: newMessages.filter(m => m.role !== 'system'),
-                    currentDate: new Date().toISOString(),
-                    coachId: coachId
-                }
-            });
+            const res = await callCloudContainer('/api/assistant', {
+                messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+                currentDate: new Date().toISOString(),
+                coachId: coachId
+            }) as any;
 
             const result: any = res.result;
             if (result.ok) {

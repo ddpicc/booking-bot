@@ -17,7 +17,7 @@ export const generateTimeSlots = (
   const slots: TimeSlot[] = [];
   const targetDate = dayjs(date);
   const dayOfWeek = targetDate.format('dddd').toLowerCase();
-  
+
   // 检查是否在工作日
   const workingHours = settings.workingHours[dayOfWeek as keyof typeof settings.workingHours];
   if (!workingHours) return slots;
@@ -41,10 +41,10 @@ export const generateTimeSlots = (
     const isAvailable = !allBookings.some((booking) => {
       const bookingStart = dayjs(booking.startTime);
       const bookingEnd = dayjs(booking.endTime);
-      
+
       // 计算缓冲时间后的结束时间
       const bookingEndWithBuffer = bookingEnd.add(booking.bufferTime || settings.bufferTime, 'minute');
-      
+
       return (
         (currentTime.isAfter(bookingStart) && currentTime.isBefore(bookingEndWithBuffer)) ||
         (slotEndTime.isAfter(bookingStart) && slotEndTime.isBefore(bookingEndWithBuffer)) ||
@@ -71,7 +71,7 @@ export const validateBooking = (
 ): { valid: boolean; message?: string } => {
   const now = dayjs();
   const bookingTime = dayjs(startTime);
-  
+
   // 检查提前量
   const advanceHours = bookingTime.diff(now, 'hour');
   if (advanceHours < settings.minAdvanceHours) {
@@ -112,3 +112,22 @@ export const getTodayStart = (): string => {
 export const getTodayEnd = (): string => {
   return dayjs().endOf('day').toISOString();
 };
+// 统一调用云托管的封装
+export const callCloudContainer = async (path: string, data: any = {}) => {
+  return await Taro.cloud.callContainer({
+    path,
+    method: 'POST',
+    header: {
+      'X-WX-SERVICE': 'booking-bot', // 替换为您的云托管服务名
+    },
+    data,
+  });
+};
+
+// 兼容原有的业务调用逻辑
+export const callService = async (service: string, action: string, data: any = {}) => {
+  return await callCloudContainer('/api/call', { service, action, data });
+};
+
+// 导出 Taro 供内部使用（如果需要）
+import Taro from '@tarojs/taro';

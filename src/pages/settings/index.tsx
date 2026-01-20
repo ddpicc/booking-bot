@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Button, Switch, Slider, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useStore } from '../../store';
+import { callService } from '../../utils';
 import './index.css';
 
 const SettingsPage: React.FC = () => {
@@ -23,10 +24,7 @@ const SettingsPage: React.FC = () => {
   const fetchCoachData = async () => {
     setLoading(true);
     try {
-      const res = await Taro.cloud.callFunction({
-        name: 'booking', // We can add a 'getCoach' action or use a dedicated CF
-        data: { action: 'getCoach', coachId }
-      }) as any;
+      const res = await callService('booking', 'getCoach', { coachId }) as any;
       if (res.result && res.result.ok) {
         const data = res.result.data;
         setCoachSettings(data.settings);
@@ -67,13 +65,9 @@ const SettingsPage: React.FC = () => {
 
     Taro.showLoading({ title: '保存中...' });
     try {
-      const res = await Taro.cloud.callFunction({
-        name: 'booking',
-        data: {
-          action: 'updateCoach',
-          coachId,
-          settings: newSettings
-        }
+      const res = await callService('booking', 'updateCoach', {
+        coachId,
+        settings: newSettings
       }) as any;
       if (res.result && res.result.ok) {
         setCoachSettings(newSettings);

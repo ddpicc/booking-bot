@@ -79,7 +79,8 @@ async function handleToolCall(toolCall, coachId, openId) {
 // 1. AI 助手
 app.post('/api/assistant', async (req, res) => {
     const { messages, currentDate, coachId } = req.body;
-    const { OPENID } = cloud.getWXContext();
+    // 云托管中从 Header 获取 OPENID
+    const OPENID = req.headers['x-wx-openid'];
 
     try {
         const response = await axios.post(API_URL, {
@@ -106,7 +107,8 @@ app.post('/api/assistant', async (req, res) => {
 // 2. 统一业务接口 (替代 booking 和 students 云函数)
 app.post('/api/call', async (req, res) => {
     const { service, action, data } = req.body;
-    const { OPENID } = cloud.getWXContext();
+    // 云托管中从 Header 获取 OPENID
+    const OPENID = req.headers['x-wx-openid'];
 
     try {
         if (service === 'students') {
