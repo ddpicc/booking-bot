@@ -166,7 +166,13 @@ app.post('/api/assistant', async (req, res) => {
         const studentRes = await db.collection('users').where({ openid: OPENID }).get();
         if (studentRes.data.length > 0) {
             studentInfo = studentRes.data[0];
-            if (!effectiveCoachId || effectiveCoachId === 'coach') effectiveCoachId = studentInfo.coachId;
+            const isPlaceholder = !effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888';
+            if (isPlaceholder) effectiveCoachId = studentInfo.coachId;
+        }
+
+        // 3. Fallback to default
+        if (!effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888') {
+            effectiveCoachId = 'test_coach_001';
         }
 
         // 2. 姓名模糊匹配

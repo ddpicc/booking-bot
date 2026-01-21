@@ -48,7 +48,7 @@ const App: React.FC = () => {
       const response = await axios.post(`${CLOUD_HOSTING_URL}/api/assistant`, {
         messages: messages.concat(userMessage).map(m => ({ role: m.role, content: m.content })),
         currentDate: new Date().toISOString(),
-        coachId: 'COACH_88888'
+        coachId: 'coach'
       });
 
       if (response.data && response.data.ok) {
