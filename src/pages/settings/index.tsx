@@ -7,7 +7,7 @@ import './index.css';
 
 const SettingsPage: React.FC = () => {
   const { coachSettings, setCoachSettings, services, setServices, addService, updateService, deleteService } = useStore();
-  const coachId = 'COACH_88888'; // 演示用固定 ID
+  const coachId = 'test_coach_001'; // 统一测试 ID
 
   const [bufferTime, setBufferTime] = useState<number>(coachSettings.bufferTime || 15);
   const [minAdvance, setMinAdvance] = useState<number>(coachSettings.minAdvanceHours || 4);
@@ -25,8 +25,8 @@ const SettingsPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await callService('booking', 'getCoach', { coachId }) as any;
-      if (res.result && res.result.ok) {
-        const data = res.result.data;
+      if (res.data && res.data.ok) {
+        const data = res.data.data;
         setCoachSettings(data.settings);
         setServices(data.settings.services || []);
         // Update local states
@@ -69,7 +69,7 @@ const SettingsPage: React.FC = () => {
         coachId,
         settings: newSettings
       }) as any;
-      if (res.result && res.result.ok) {
+      if (res.data && res.data.ok) {
         setCoachSettings(newSettings);
         Taro.showToast({ title: '已同步到云端', icon: 'success' });
       }
@@ -145,7 +145,7 @@ const SettingsPage: React.FC = () => {
           <View className="settings-coach-info">
             <Text className="settings-coach-name">张伟教练</Text>
             <View className="settings-coach-badge">
-              <Text className="settings-coach-id">ID: COACH_88888</Text>
+              <Text className="settings-coach-id">ID: test_coach_001</Text>
             </View>
           </View>
         </View>
@@ -225,7 +225,7 @@ const SettingsPage: React.FC = () => {
         <View className="settings-section-card no-padding">
           <Text className="settings-section-heading padding-h">AI 助手测试</Text>
           <View className="settings-list">
-            <View className="settings-list-item no-border" onClick={() => Taro.navigateTo({ url: '/pages/chat/index?coachId=COACH_88888' })}>
+            <View className="settings-list-item no-border" onClick={() => Taro.navigateTo({ url: '/pages/chat/index?coachId=test_coach_001' })}>
               <View className="settings-item-left">
                 <View className="settings-item-icon-box blue-lite">
                   <Text className="material-symbols-outlined">smart_toy</Text>

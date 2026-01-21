@@ -40,8 +40,8 @@ const CoachHome: React.FC = () => {
         callService('lock', 'listByDate', { coachId, date })
       ]) as any;
 
-      if (bookingRes.result?.ok && lockRes.result?.ok) {
-        const remoteBookings = bookingRes.result.data.map((b: any) => ({
+      if (bookingRes.data?.ok && lockRes.data?.ok) {
+        const remoteBookings = bookingRes.data.data.map((b: any) => ({
           ...b,
           id: b._id,
         }));
@@ -81,7 +81,7 @@ const CoachHome: React.FC = () => {
         status: status
       }) as any;
 
-      if (res.result?.ok) {
+      if (res.data?.ok) {
         updateBookingStatus(id, status);
         Taro.showToast({ title: status === 'confirmed' ? '已通过' : '已拒绝', icon: 'success' });
       } else {
@@ -138,7 +138,7 @@ const CoachHome: React.FC = () => {
         endTime: end.toISOString(),
         status: 'confirmed'
       }) as any;
-      if (res.result?.ok) {
+      if (res.data?.ok) {
         setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '预约成功', icon: 'success' });
@@ -151,7 +151,7 @@ const CoachHome: React.FC = () => {
         endTime: end.toISOString(),
         reason: lockReason
       }) as any;
-      if (res.result?.ok) {
+      if (res.data?.ok) {
         setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '已锁定时间', icon: 'success' });
