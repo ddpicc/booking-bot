@@ -14,10 +14,8 @@ const cloud = cloudbase.init({
     secretId: "AKIDjMzVpxtcIuWwAF8oKelfT6XmphNtGRTy",
     secretKey: "X9pOlvscCZmmaBZljU2NWTKl6HI80iGh",
 });
-const db = cloud.database({
-    instance: "flexdb",
-    database: "tnt-20omv8uou",
-});
+// 修正：使用默认数据库实例，与小程序端保持一致
+const db = cloud.database();
 const _ = db.command;
 
 // 中间件：日志打印
