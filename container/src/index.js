@@ -201,12 +201,19 @@ app.post('/api/call', async (req, res) => {
             }
         }
         if (service === 'lock') {
+            const effectiveCoachId = data.coachId || 'test_coach_001';
             if (action === 'listByDate') {
                 const { start, end } = getDayRange(data.date);
+                console.log(`[Lock] Querying: coachId=${effectiveCoachId}, range=[${start.toISOString()} - ${end.toISOString()}]`);
                 const result = await db.collection('locks').where({
-                    coachId: data.coachId,
+                    coachId: effectiveCoachId,
                     startTime: _.gte(start).and(_.lt(end))
                 }).get();
+                console.log(`[Lock] Found ${result.data.length} records`);
+                return res.json({ ok: true, data: result.data });
+            }
+            if (action === 'debug') {
+                const result = await db.collection('locks').limit(10).get();
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'create') {
@@ -215,6 +222,7 @@ app.post('/api/call', async (req, res) => {
                 const result = await db.collection('locks').add({
                     data: {
                         ...data,
+                        coachId: effectiveCoachId,
                         startTime: start,
                         endTime: end,
                         createdAt: new Date()
@@ -224,17 +232,17 @@ app.post('/api/call', async (req, res) => {
             }
         }
         if (service === 'booking') {
+            const effectiveCoachId = data.coachId || 'test_coach_001';
             if (action === 'create') {
                 const start = toDate(data.startTime);
                 const end = toDate(data.endTime);
-                const coachId = data.coachId;
 
                 // 统一校验重叠 (手动创建也检查)
                 const overlapBookings = await db.collection('bookings').where({
-                    coachId, status: _.neq('cancelled'), startTime: _.lt(end), endTime: _.gt(start)
+                    coachId: effectiveCoachId, status: _.neq('cancelled'), startTime: _.lt(end), endTime: _.gt(start)
                 }).get();
                 const overlapLocks = await db.collection('locks').where({
-                    coachId, startTime: _.lt(end), endTime: _.gt(start)
+                    coachId: effectiveCoachId, startTime: _.lt(end), endTime: _.gt(start)
                 }).get();
 
                 if (overlapBookings.data.length || overlapLocks.data.length) {
@@ -244,7 +252,8 @@ app.post('/api/call', async (req, res) => {
                 const result = await db.collection('bookings').add({
                     data: {
                         ...data,
-                        studentId: data.studentId || OPENID, // 优先使用传参中的学员 ID
+                        coachId: effectiveCoachId,
+                        studentId: data.studentId || OPENID,
                         startTime: start,
                         endTime: end,
                         createdAt: new Date()
@@ -254,7 +263,11 @@ app.post('/api/call', async (req, res) => {
             }
             if (action === 'listByDate') {
                 const { start, end } = getDayRange(data.date);
-                const result = await db.collection('bookings').where({ coachId: data.coachId, startTime: _.gte(start).and(_.lt(end)) }).get();
+                console.log(`[Booking] Querying: coachId=${effectiveCoachId}, date=${data.date}`);
+                const result = await db.collection('bookings').where({
+                    coachId: effectiveCoachId,
+                    startTime: _.gte(start).and(_.lt(end))
+                }).get();
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'updateStatus') {
