@@ -204,17 +204,33 @@ app.post('/api/call', async (req, res) => {
             const effectiveCoachId = data.coachId || 'test_coach_001';
             if (action === 'listByDate') {
                 const { start, end } = getDayRange(data.date);
-                console.log(`[Lock] Querying: coachId=${effectiveCoachId}, range=[${start.toISOString()} - ${end.toISOString()}]`);
+                console.log(`[Lock] Querying: coachId=${effectiveCoachId}, date=${data.date}`);
+                console.log(`[Lock] Range UTC: ${start.toISOString()} - ${end.toISOString()}`);
+
                 const result = await db.collection('locks').where({
                     coachId: effectiveCoachId,
                     startTime: _.gte(start).and(_.lt(end))
                 }).get();
-                console.log(`[Lock] Found ${result.data.length} records`);
+
+                console.log(`[Lock] Query result count: ${result.data.length}`);
+                if (result.data.length === 0) {
+                    // 如果没找到，打印一下这个日期前后的数据作为参考
+                    const nearby = await db.collection('locks').where({ coachId: effectiveCoachId }).limit(3).get();
+                    console.log(`[Lock] Nearby samples for coach:`, nearby.data.map(d => ({ id: d._id, start: d.startTime, type: typeof d.startTime })));
+                }
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'debug') {
                 const result = await db.collection('locks').limit(10).get();
-                return res.json({ ok: true, data: result.data });
+                const debugData = result.data.map(d => ({
+                    _id: d._id,
+                    coachId: d.coachId,
+                    coachIdType: typeof d.coachId,
+                    startTime: d.startTime,
+                    startTimeType: typeof d.startTime,
+                    isDateObject: d.startTime instanceof Date
+                }));
+                return res.json({ ok: true, debug: debugData });
             }
             if (action === 'create') {
                 const start = toDate(data.startTime);
