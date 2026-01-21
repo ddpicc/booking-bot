@@ -111,10 +111,8 @@ async function handleToolCall(toolCall, coachId, openId) {
         }
 
         const res = await db.collection('bookings').add({
-            data: {
-                coachId, studentId: openId, studentName, serviceName: serviceName || 'AI 预约',
-                startTime: start, endTime: end, status: 'pending', createdAt: new Date()
-            }
+            coachId, studentId: openId, studentName, serviceName: serviceName || 'AI 预约',
+            startTime: start, endTime: end, status: 'pending', createdAt: new Date()
         });
         return JSON.stringify({ ok: true, bookingId: res._id });
     }
@@ -190,7 +188,7 @@ app.post('/api/call', async (req, res) => {
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'create') {
-                const result = await db.collection('users').add({ data: { ...data, createdAt: new Date() } });
+                const result = await db.collection('users').add({ ...data, createdAt: new Date() });
                 return res.json({ ok: true, id: result._id });
             }
             if (action === 'getProfile') {
@@ -234,13 +232,11 @@ app.post('/api/call', async (req, res) => {
                 const start = toDate(data.startTime);
                 const end = toDate(data.endTime);
                 const result = await db.collection('locks').add({
-                    data: {
-                        ...data,
-                        coachId: effectiveCoachId,
-                        startTime: start,
-                        endTime: end,
-                        createdAt: new Date()
-                    }
+                    ...data,
+                    coachId: effectiveCoachId,
+                    startTime: start,
+                    endTime: end,
+                    createdAt: new Date()
                 });
                 return res.json({ ok: true, id: result._id });
             }
