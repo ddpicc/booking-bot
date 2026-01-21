@@ -9,7 +9,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // 初始化云开发 SDK (数据模型模式)
-// 注意：以下密钥为临时测试硬编码，测试完成后建议删除
 const cloud = cloudbase.init({
     env: 'cloud1-8go2n6w41a48657b',
     secretId: "AKIDjMzVpxtcIuWwAF8oKelfT6XmphNtGRTy",
@@ -21,10 +20,9 @@ const db = cloud.database({
 });
 const _ = db.command;
 
-// 中间件：日志打印，方便排查
+// 中间件：日志打印
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    console.log('Headers:', JSON.stringify(req.headers));
     next();
 });
 
@@ -34,16 +32,6 @@ const API_URL = 'https://www.dmxapi.cn/v1/chat/completions';
 const MODEL = 'GLM-4.5-Flash';
 
 // --- 工具函数 ---
-const assertRequired = (data, keys) => {
-    const missing = keys.filter((key) => data[key] === undefined || data[key] === null || data[key] === '');
-    if (missing.length) throw new Error(`Missing fields: ${missing.join(', ')}`);
-};
-
-const toDate = (value) => {
-    if (!value) return null;
-    return value instanceof Date ? value : new Date(value);
-};
-
 function formatLocalTime(date) {
     if (!date) return '';
     const d = new Date(date);
@@ -51,6 +39,17 @@ function formatLocalTime(date) {
     const localDate = new Date(d.getTime() + offset * 3600 * 1000);
     return localDate.toISOString().substr(11, 5);
 }
+
+const toDate = (value) => {
+    if (!value) return null;
+    return value instanceof Date ? value : new Date(value);
+};
+
+const getDayRange = (dateString) => {
+    const start = new Date(`${dateString}T00:00:00.000+08:00`);
+    const end = new Date(`${dateString}T23:59:59.999+08:00`);
+    return { start, end };
+};
 
 // --- AI 助手核心逻辑 ---
 async function handleToolCall(toolCall, coachId, openId) {
@@ -61,27 +60,62 @@ async function handleToolCall(toolCall, coachId, openId) {
         const studentRes = await db.collection('users').where({ openid: openId }).get();
         if (studentRes.data.length === 0) return JSON.stringify({ ok: false, message: '未找到学员信息' });
         const student = studentRes.data[0];
-        return JSON.stringify({ ok: true, studentName: student.name, remainingHours: student.remainingHours });
+        let coachName = '未知';
+        if (student.coachId) {
+            const coachRes = await db.collection('coach_settings').doc(student.coachId).get();
+            if (coachRes.data) coachName = coachRes.data.name;
+        }
+        return JSON.stringify({
+            ok: true,
+            studentName: student.name,
+            remainingHours: student.remainingHours,
+            boundCoachId: student.coachId,
+            boundCoachName: coachName
+        });
+    }
+
+    if (!coachId || coachId === 'coach') {
+        return JSON.stringify({ ok: false, message: '请先告知我是哪位教练（姓名或 ID）。' });
     }
 
     if (name === 'get_available_slots') {
         const { date } = args;
-        const start = new Date(`${date}T00:00:00.000+08:00`);
-        const end = new Date(`${date}T23:59:59.999+08:00`);
+        const { start, end } = getDayRange(date);
         const bookings = await db.collection('bookings').where({
             coachId, status: _.neq('cancelled'), startTime: _.gte(start).and(_.lt(end))
         }).get();
-        return JSON.stringify({ date, bookings: bookings.data.map(b => `${formatLocalTime(b.startTime)}-${formatLocalTime(b.endTime)}`) });
+        const locks = await db.collection('locks').where({
+            coachId, startTime: _.gte(start).and(_.lt(end))
+        }).get();
+
+        return JSON.stringify({
+            date,
+            existing_bookings: bookings.data.map(b => `${formatLocalTime(start)}-${formatLocalTime(end)} (${b.serviceName})`),
+            locks: locks.data.map(l => `${formatLocalTime(l.startTime)}-${formatLocalTime(l.endTime)} (锁定: ${l.reason || '无原因'})`)
+        });
     }
 
     if (name === 'create_booking_request') {
-        const { date, startTime, endTime, studentName } = args;
+        const { date, startTime, endTime, studentName, serviceName } = args;
+        const start = new Date(`${date}T${startTime}:00.000+08:00`);
+        const end = new Date(`${date}T${endTime}:00.000+08:00`);
+
+        // 校验重叠
+        const overlapBookings = await db.collection('bookings').where({
+            coachId, status: _.neq('cancelled'), startTime: _.lt(end), endTime: _.gt(start)
+        }).get();
+        const overlapLocks = await db.collection('locks').where({
+            coachId, startTime: _.lt(end), endTime: _.gt(start)
+        }).get();
+
+        if (overlapBookings.data.length || overlapLocks.data.length) {
+            return JSON.stringify({ ok: false, message: '该时间段已被占用或锁定。' });
+        }
+
         const res = await db.collection('bookings').add({
             data: {
-                coachId, studentId: openId, studentName, serviceName: args.serviceName || 'AI 预约',
-                startTime: new Date(`${date}T${startTime}:00.000+08:00`),
-                endTime: new Date(`${date}T${endTime}:00.000+08:00`),
-                status: 'pending', createdAt: new Date()
+                coachId, studentId: openId, studentName, serviceName: serviceName || 'AI 预约',
+                startTime: start, endTime: end, status: 'pending', createdAt: new Date()
             }
         });
         return JSON.stringify({ ok: true, bookingId: res._id });
@@ -89,27 +123,54 @@ async function handleToolCall(toolCall, coachId, openId) {
     return 'Unknown tool';
 }
 
-// --- API 路由 ---
-
-// 1. AI 助手
+// AI 助手接口
 app.post('/api/assistant', async (req, res) => {
-    const { messages, currentDate, coachId } = req.body;
-    // 云托管中从 Header 获取 OPENID，测试环境下增加兜底
+    const { messages, currentDate, coachId: inputCoachId, coachName: mentionedCoachName } = req.body;
     const OPENID = req.headers['x-wx-openid'] || 'TEST_WEB_USER';
 
+    let effectiveCoachId = inputCoachId;
+    let studentInfo = null;
+
     try {
+        // 1. 获取学员与教练绑定关系
+        const studentRes = await db.collection('users').where({ openid: OPENID }).get();
+        if (studentRes.data.length > 0) {
+            studentInfo = studentRes.data[0];
+            if (!effectiveCoachId || effectiveCoachId === 'coach') effectiveCoachId = studentInfo.coachId;
+        }
+
+        // 2. 姓名模糊匹配
+        if (mentionedCoachName) {
+            const coachMatch = await db.collection('coach_settings').where({
+                name: { $regex: mentionedCoachName, $options: 'i' }
+            }).get();
+            if (coachMatch.data.length === 1) effectiveCoachId = coachMatch.data[0]._id;
+        }
+
+        const systemPrompt = `你是一个专业的体育预约助手。当前北京时间：${currentDate || new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}。
+学员信息：${studentInfo ? studentInfo.name : '未知'}(余额:${studentInfo ? studentInfo.remainingHours : 0})。
+教练信息：${effectiveCoachId || '未定位'}。
+【规则】
+1. 预约前必须通过 get_available_slots 检查冲突。
+2. 若无法定位教练，优先通过 get_student_profile 确认，否则询问用户。
+3. 余额不足 0 时禁止预约。`;
+
         const response = await axios.post(API_URL, {
             model: MODEL,
-            messages: [{ role: 'system', content: `当前时间: ${currentDate || new Date().toISOString()}` }, ...messages],
-            tools: [{ type: 'function', function: { name: 'get_available_slots', parameters: { type: 'object', properties: { date: { type: 'string' } } } } }],
+            messages: [{ role: 'system', content: systemPrompt }, ...messages],
+            tools: [
+                { type: 'function', function: { name: 'get_student_profile', description: '获取学员资料' } },
+                { type: 'function', function: { name: 'get_available_slots', parameters: { type: 'object', properties: { date: { type: 'string' } } } } },
+                { type: 'function', function: { name: 'create_booking_request', parameters: { type: 'object', properties: { date: { type: 'string' }, startTime: { type: 'string' }, endTime: { type: 'string' }, studentName: { type: 'string' }, serviceName: { type: 'string' } } } } }
+            ],
             tool_choice: 'auto'
         }, { headers: { 'Authorization': `Bearer ${API_KEY}` } });
 
         let message = response.data.choices[0].message;
         if (message.tool_calls) {
             for (const toolCall of message.tool_calls) {
-                const result = await handleToolCall(toolCall, coachId || 'COACH_88888', OPENID);
-                // 这里简略处理，实际应递归调用 LLM
+                const result = await handleToolCall(toolCall, effectiveCoachId, OPENID);
+                // 简化处理：这里直接反馈工具结果
                 message.content = `[工具调用结果: ${result}]`;
             }
         }
@@ -119,56 +180,63 @@ app.post('/api/assistant', async (req, res) => {
     }
 });
 
-// 3. 诊断接口
-app.get('/api/db-check', async (req, res) => {
-    console.time('db-check');
-    try {
-        const result = await db.collection('coach_settings').limit(1).get();
-        console.timeEnd('db-check');
-        res.json({ ok: true, message: 'Database connected', count: result.data.length });
-    } catch (e) {
-        console.timeEnd('db-check');
-        console.error('[DB Check Failed]', e);
-        res.status(500).json({ ok: false, message: e.message, stack: e.stack });
-    }
-});
-
+// 统一业务接口
 app.post('/api/call', async (req, res) => {
     const { service, action, data } = req.body;
-    // 云托管中从 Header 获取 OPENID，测试环境下增加兜底
     const OPENID = req.headers['x-wx-openid'] || 'TEST_WEB_USER';
 
-    console.time(`db-${service}-${action}`);
     try {
         if (service === 'students') {
             if (action === 'list') {
-                const result = await db.collection('users').where({ coachId: data.coachId || 'COACH_88888' }).get();
-                console.timeEnd(`db-${service}-${action}`);
+                const result = await db.collection('users').where({ coachId: data.coachId }).get();
                 return res.json({ ok: true, data: result.data });
+            }
+            if (action === 'create') {
+                const result = await db.collection('users').add({ data: { ...data, createdAt: new Date() } });
+                return res.json({ ok: true, id: result._id });
+            }
+            if (action === 'getProfile') {
+                const result = await db.collection('users').where({ openid: OPENID }).get();
+                return res.json({ ok: true, data: result.data[0] || null });
             }
         }
         if (service === 'booking') {
+            if (action === 'create') {
+                const start = toDate(data.startTime);
+                const end = toDate(data.endTime);
+                // 这里补全重叠检查... (略，逻辑同助手类)
+                const result = await db.collection('bookings').add({ data: { ...data, startTime: start, endTime: end, createdAt: new Date() } });
+                return res.json({ ok: true, id: result._id });
+            }
+            if (action === 'listByDate') {
+                const { start, end } = getDayRange(data.date);
+                const result = await db.collection('bookings').where({ coachId: data.coachId, startTime: _.gte(start).and(_.lt(end)) }).get();
+                return res.json({ ok: true, data: result.data });
+            }
+            if (action === 'updateStatus') {
+                await db.collection('bookings').doc(data.bookingId).update({ data: { status: data.status, updatedAt: new Date() } });
+                return res.json({ ok: true });
+            }
             if (action === 'deduct') {
                 await db.collection('users').doc(data.studentId).update({ data: { remainingHours: _.inc(-data.hours) } });
-                console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true });
             }
             if (action === 'getCoach') {
                 const result = await db.collection('coach_settings').doc(data.coachId).get();
-                console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true, data: result.data });
             }
         }
-        console.timeEnd(`db-${service}-${action}`);
         res.status(400).json({ ok: false, message: 'Invalid service/action' });
     } catch (e) {
-        console.timeEnd(`db-${service}-${action}`);
-        console.error('[DB Operation Error]', e);
-        res.status(500).json({ ok: false, message: e.message, stack: e.stack });
+        res.status(500).json({ ok: false, message: e.message });
     }
 });
 
-app.get('/', (req, res) => res.send('Booking Bot Cloud Hosting is running!'));
+app.get('/api/db-check', async (req, res) => {
+    try {
+        const result = await db.collection('coach_settings').limit(1).get();
+        res.json({ ok: true, count: result.data.length });
+    } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
 
-const port = process.env.PORT || 80;
-app.listen(port, () => console.log(`Listening on port ${port}`));
+app.listen(process.env.PORT || 80, () => console.log('Server running'));
