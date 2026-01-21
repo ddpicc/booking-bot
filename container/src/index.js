@@ -149,7 +149,7 @@ app.post('/api/assistant', async (req, res) => {
 
         const systemPrompt = `你是一个专业的体育预约助手。当前北京时间：${currentDate || new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}。
 学员信息：${studentInfo ? studentInfo.name : '未知'}(余额:${studentInfo ? studentInfo.remainingHours : 0})。
-教练信息：${effectiveCoachId || '未定位'}。
+教练信息：${effectiveCoachId || 'test_coach_001'}。
 【规则】
 1. 预约前必须通过 get_available_slots 检查冲突。
 2. 若无法定位教练，优先通过 get_student_profile 确认，否则询问用户。
@@ -169,7 +169,7 @@ app.post('/api/assistant', async (req, res) => {
         let message = response.data.choices[0].message;
         if (message.tool_calls) {
             for (const toolCall of message.tool_calls) {
-                const result = await handleToolCall(toolCall, effectiveCoachId, OPENID);
+                const result = await handleToolCall(toolCall, effectiveCoachId || 'test_coach_001', OPENID);
                 // 简化处理：这里直接反馈工具结果
                 message.content = `[工具调用结果: ${result}]`;
             }
@@ -188,7 +188,7 @@ app.post('/api/call', async (req, res) => {
     try {
         if (service === 'students') {
             if (action === 'list') {
-                const result = await db.collection('users').where({ coachId: data.coachId }).get();
+                const result = await db.collection('users').where({ coachId: data.coachId || 'test_coach_001' }).get();
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'create') {

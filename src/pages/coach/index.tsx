@@ -9,7 +9,7 @@ import './index.css';
 
 const CoachHome: React.FC = () => {
   const router = Taro.useRouter();
-  const coachIdFromQuery = router.params.coachId || 'coach';
+  const coachIdFromQuery = router.params.coachId || 'test_coach_001';
   const coachId = coachIdFromQuery;
 
   const {
@@ -25,6 +25,7 @@ const CoachHome: React.FC = () => {
   const [lockEndTime, setLockEndTime] = useState('10:00');
   const [lockReason, setLockReason] = useState('私人时间');
   const [modalMode, setModalMode] = useState<'lock' | 'booking'>('lock');
+  const [selectedModalDate, setSelectedModalDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [studentName, setStudentName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [serviceIndex, setServiceIndex] = useState(0);
@@ -112,8 +113,8 @@ const CoachHome: React.FC = () => {
 
   // 处理手动操作
   const handleManualAction = async () => {
-    const start = dayjs(`${selectedDate} ${lockStartTime}`);
-    const end = dayjs(`${selectedDate} ${lockEndTime}`);
+    const start = dayjs(`${selectedModalDate} ${lockStartTime}`);
+    const end = dayjs(`${selectedModalDate} ${lockEndTime}`);
 
     if (end.isBefore(start) || end.isSame(start)) {
       Taro.showToast({ title: '结束时间必须晚于开始时间', icon: 'none' });
@@ -138,7 +139,7 @@ const CoachHome: React.FC = () => {
         status: 'confirmed'
       }) as any;
       if (res.result?.ok) {
-        fetchData(selectedDate);
+        setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '预约成功', icon: 'success' });
       }
@@ -151,7 +152,7 @@ const CoachHome: React.FC = () => {
         reason: lockReason
       }) as any;
       if (res.result?.ok) {
-        fetchData(selectedDate);
+        setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '已锁定时间', icon: 'success' });
       }
@@ -346,6 +347,18 @@ const CoachHome: React.FC = () => {
             </View>
             <View className="coach-lock-modal-content">
               <View className="coach-lock-modal-form">
+                <View className="coach-lock-modal-row">
+                  <View className="coach-lock-modal-form-item flex-1">
+                    <Text className="coach-lock-modal-form-label">日期</Text>
+                    <Picker mode="date" value={selectedModalDate} onChange={e => setSelectedModalDate(e.detail.value)}>
+                      <View className="coach-lock-modal-picker">
+                        <Text className="coach-lock-modal-picker-value">{selectedModalDate}</Text>
+                        <Text className="coach-lock-modal-picker-icon">▾</Text>
+                      </View>
+                    </Picker>
+                  </View>
+                </View>
+
                 <View className="coach-lock-modal-row">
                   <View className="coach-lock-modal-form-item flex-1">
                     <Text className="coach-lock-modal-form-label">开始时间</Text>
