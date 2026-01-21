@@ -1,15 +1,20 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const cloud = require('wx-server-sdk');
+const cloudbase = require("@cloudbase/node-sdk");
 const axios = require('axios');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// 初始化云开发 SDK (使用 wx-server-sdk 以获得容器自动鉴权)
-cloud.init({ env: 'cloud1-8go2n6w41a48657b' });
+// 初始化云开发 SDK (数据模型模式)
+// 注意：以下密钥为临时测试硬编码，测试完成后建议删除
+const cloud = cloudbase.init({
+    env: 'cloud1-8go2n6w41a48657b',
+    secretId: "AKIDjMzVpxtcIuWwAF8oKelfT6XmphNtGRTy",
+    secretKey: "X9pOlvscCZmmaBZljU2NWTKl6HI80iGh",
+});
 const db = cloud.database({
     instance: "flexdb",
     database: "tnt-20omv8uou",
