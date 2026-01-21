@@ -200,12 +200,56 @@ app.post('/api/call', async (req, res) => {
                 return res.json({ ok: true, data: result.data[0] || null });
             }
         }
+        if (service === 'lock') {
+            if (action === 'listByDate') {
+                const { start, end } = getDayRange(data.date);
+                const result = await db.collection('locks').where({
+                    coachId: data.coachId,
+                    startTime: _.gte(start).and(_.lt(end))
+                }).get();
+                return res.json({ ok: true, data: result.data });
+            }
+            if (action === 'create') {
+                const start = toDate(data.startTime);
+                const end = toDate(data.endTime);
+                const result = await db.collection('locks').add({
+                    data: {
+                        ...data,
+                        startTime: start,
+                        endTime: end,
+                        createdAt: new Date()
+                    }
+                });
+                return res.json({ ok: true, id: result._id });
+            }
+        }
         if (service === 'booking') {
             if (action === 'create') {
                 const start = toDate(data.startTime);
                 const end = toDate(data.endTime);
-                // 这里补全重叠检查... (略，逻辑同助手类)
-                const result = await db.collection('bookings').add({ data: { ...data, startTime: start, endTime: end, createdAt: new Date() } });
+                const coachId = data.coachId;
+
+                // 统一校验重叠 (手动创建也检查)
+                const overlapBookings = await db.collection('bookings').where({
+                    coachId, status: _.neq('cancelled'), startTime: _.lt(end), endTime: _.gt(start)
+                }).get();
+                const overlapLocks = await db.collection('locks').where({
+                    coachId, startTime: _.lt(end), endTime: _.gt(start)
+                }).get();
+
+                if (overlapBookings.data.length || overlapLocks.data.length) {
+                    return res.json({ ok: false, message: '该时间段已被占用或锁定' });
+                }
+
+                const result = await db.collection('bookings').add({
+                    data: {
+                        ...data,
+                        studentId: data.studentId || OPENID, // 优先使用传参中的学员 ID
+                        startTime: start,
+                        endTime: end,
+                        createdAt: new Date()
+                    }
+                });
                 return res.json({ ok: true, id: result._id });
             }
             if (action === 'listByDate') {
