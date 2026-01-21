@@ -110,12 +110,15 @@ async function handleToolCall(toolCall, coachId, openId) {
     if (name === 'get_available_slots') {
         const { date } = args;
         const { start, end } = getDayRange(date);
+        console.log(`[AI Tool] get_available_slots: coachId=${coachId}, date=${date}`);
         const rangeCondition = { coachId, status: _.neq('cancelled'), startTime: _.gte(start).and(_.lt(end)) };
         const dateCondition = { coachId, date };
         const bookings = await db.collection('bookings').where(_.or([rangeCondition, dateCondition])).get();
         const lockRange = { coachId, startTime: _.gte(start).and(_.lt(end)) };
         const lockDate = { coachId, date };
         const locks = await db.collection('locks').where(_.or([lockRange, lockDate])).get();
+
+        console.log(`[AI Tool] Query Results: bookings=${bookings.data.length}, locks=${locks.data.length}`);
 
         return JSON.stringify({
             date,
@@ -175,8 +178,10 @@ app.post('/api/assistant', async (req, res) => {
         }
 
         const now = currentDate ? new Date(currentDate) : new Date();
-        const dateString = now.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
-        const timeString = now.toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
+        // 获得北京时间的 YYYY-MM-DD
+        const bjNow = new Date(now.getTime() + 8 * 3600000);
+        const dateString = bjNow.toISOString().split('T')[0];
+        const timeString = bjNow.toISOString().split('T')[1].substr(0, 5);
         const dayOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
 
         const coachContext = effectiveCoachId && effectiveCoachId !== 'coach'
@@ -191,12 +196,16 @@ app.post('/api/assistant', async (req, res) => {
             {
                 role: 'system',
                 content: `你是一个专业的体育预约助手。${coachContext} ${studentContext}
+【当前时间】
+今天是：${dateString} ${timeString} (${dayOfWeek})。请务必根据此时间上下文理解用户的“今天”、“明天”或“几点”等相对时间概念。
+
 【核心规则】
-1. 当前北京时间是：${dateString} ${timeString} (${dayOfWeek})。
-2. 预约/查询前必须通过 get_available_slots 检查冲突。
-3. 若无法定位教练，优先通过 get_student_profile 确认；否则礼貌询问用户提供 coachId。
-4. 余额不足禁止预约。
-5. 严禁在回复中输出 XML 标签，必须用标准 tool_calls。`
+1. **[重要] 日期优先**：如果用户询问“什么时候有空”或“今天/明天能不能约”，请优先使用 get_available_slots 查询。如果用户未指定日期，默认查询 ${dateString} (今天)。
+2. **[重要] 预约检查**：在执行 create_booking_request 之前，必须先调用 get_available_slots 确认用户选择的时间段是空闲的。
+3. **[重要] 状态反馈**：查询结果会显示 existing_bookings (已有预约) 和 locks (锁定不可约)。如果查询结果为空，说明该日期目前完全空闲。
+4. **定位教练**：若不明确哪位教练，优先通过 get_student_profile 确认；否则礼貌询问用户。
+5. **课时校验**：余额不足（remainingHours <= 0）时，婉拒预约并提醒充值。
+6. **合规提示**：严禁输出任何 XML 标签。必须使用标准 tool_calls 机制。`
             },
             ...messages
         ];
@@ -205,9 +214,48 @@ app.post('/api/assistant', async (req, res) => {
             model: MODEL,
             messages: currentMessages,
             tools: [
-                { type: 'function', function: { name: 'get_student_profile', description: '获取学员资料' } },
-                { type: 'function', function: { name: 'get_available_slots', parameters: { type: 'object', properties: { date: { type: 'string' } } } } },
-                { type: 'function', function: { name: 'create_booking_request', parameters: { type: 'object', properties: { date: { type: 'string' }, startTime: { type: 'string' }, endTime: { type: 'string' }, studentName: { type: 'string' }, serviceName: { type: 'string' } } } } }
+                {
+                    type: 'function',
+                    function: {
+                        name: 'get_student_profile',
+                        description: '获取当前学员的个人资料、课时余额以及绑定的教练信息'
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'get_available_slots',
+                        description: '查询指定日期的教练排班、已有预约和时间锁定情况',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                date: {
+                                    type: 'string',
+                                    description: '查询日期，格式为 YYYY-MM-DD (例如: 2026-01-21)'
+                                }
+                            },
+                            required: ['date']
+                        }
+                    }
+                },
+                {
+                    type: 'function',
+                    function: {
+                        name: 'create_booking_request',
+                        description: '发起一个新的预约请求。发起前务必先查询可用状态。',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                date: { type: 'string', description: '预约日期 (YYYY-MM-DD)' },
+                                startTime: { type: 'string', description: '开始时间 (HH:mm)' },
+                                endTime: { type: 'string', description: '结束时间 (HH:mm)' },
+                                studentName: { type: 'string', description: '学员姓名' },
+                                serviceName: { type: 'string', description: '课程或服务名称 (例如: 网球私教课)' }
+                            },
+                            required: ['date', 'startTime', 'endTime', 'studentName']
+                        }
+                    }
+                }
             ],
             tool_choice: 'auto'
         }, { headers: { 'Authorization': `Bearer ${API_KEY}` } });

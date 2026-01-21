@@ -22,6 +22,41 @@ const tools = [
             },
         },
     },
+    {
+        type: 'function',
+        function: {
+            name: 'get_available_slots',
+            description: '查询指定日期的教练排班、已有预约和时间锁定情况',
+            parameters: {
+                type: 'object',
+                properties: {
+                    date: {
+                        type: 'string',
+                        description: '查询日期，格式为 YYYY-MM-DD'
+                    }
+                },
+                required: ['date']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'create_booking_request',
+            description: '发起一个新的预约请求。发起前务必先查询可用状态。',
+            parameters: {
+                type: 'object',
+                properties: {
+                    date: { type: 'string', description: '预约日期 (YYYY-MM-DD)' },
+                    startTime: { type: 'string', description: '开始时间 (HH:mm)' },
+                    endTime: { type: 'string', description: '结束时间 (HH:mm)' },
+                    studentName: { type: 'string', description: '学员姓名' },
+                    serviceName: { type: 'string', description: '课程或服务名称' }
+                },
+                required: ['date', 'startTime', 'endTime', 'studentName']
+            }
+        }
+    }
 ];
 
 // 格式化 Date 对象为北京时间 HH:mm
@@ -85,14 +120,14 @@ async function handleToolCall(toolCall, coachId, openId) {
     }
 
     if (name === 'get_student_profile') {
-        const studentRes = await db.collection('students').where({ openid: openId }).get();
+        const studentRes = await db.collection('users').where({ openid: openId }).get();
         if (studentRes.data.length === 0) {
             return JSON.stringify({ ok: false, message: '未找到您的学员信息，请先在“学员管理”录入。' });
         }
         const student = studentRes.data[0];
         let coachName = '未知';
         if (student.coachId) {
-            const coachRes = await db.collection('coaches').doc(student.coachId).get().catch(() => ({ data: null }));
+            const coachRes = await db.collection('coach_settings').doc(student.coachId).get().catch(() => ({ data: null }));
             if (coachRes.data) coachName = coachRes.data.name;
         }
         return JSON.stringify({
@@ -110,25 +145,40 @@ async function handleToolCall(toolCall, coachId, openId) {
 
     if (name === 'get_available_slots') {
         const { date } = args;
+        console.log(`[AI Tool] get_available_slots: coachId=${coachId}, date=${date}`);
         // 数据库查询也需要考虑时区，通常云数据库存储的是 UTC，
         // 这里构建当天的 00:00:00 到 23:59:59 (北京时间)
         const start = new Date(`${date}T00:00:00.000+08:00`);
         const end = new Date(`${date}T23:59:59.999+08:00`);
 
+        const rangeCondition = {
+            coachId,
+            status: _.neq('cancelled'),
+            startTime: _.gte(start).and(_.lt(end)),
+        };
+        const dateCondition = {
+            coachId,
+            date,
+        };
+
         const bookings = await db.collection('bookings')
-            .where({
-                coachId,
-                status: _.neq('cancelled'),
-                startTime: _.gte(start).and(_.lt(end)),
-            })
+            .where(_.or([rangeCondition, dateCondition]))
             .get();
 
+        const lockRange = {
+            coachId,
+            startTime: _.gte(start).and(_.lt(end)),
+        };
+        const lockDate = {
+            coachId,
+            date,
+        };
+
         const locks = await db.collection('locks')
-            .where({
-                coachId,
-                startTime: _.gte(start).and(_.lt(end)),
-            })
+            .where(_.or([lockRange, lockDate]))
             .get();
+
+        console.log(`[AI Tool] Query Results: bookings=${bookings.data.length}, locks=${locks.data.length}`);
 
         return JSON.stringify({
             date,
@@ -192,8 +242,10 @@ exports.main = async (event, context) => {
 
     // 使用传入的日期或服务器当前日期
     const now = currentDate ? new Date(currentDate) : new Date();
-    const dateString = now.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
-    const timeString = now.toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
+    // 获得北京时间的 YYYY-MM-DD
+    const bjNow = new Date(now.getTime() + 8 * 3600000);
+    const dateString = bjNow.toISOString().split('T')[0];
+    const timeString = bjNow.toISOString().split('T')[1].substr(0, 5);
     const dayOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
 
     // --- 多教练定位逻辑 ---
@@ -201,7 +253,7 @@ exports.main = async (event, context) => {
     let studentInfo = null;
 
     // 1. 获取学员信息
-    const studentRes = await db.collection('students').where({ openid: OPENID }).get();
+    const studentRes = await db.collection('users').where({ openid: OPENID }).get();
     if (studentRes.data.length > 0) {
         studentInfo = studentRes.data[0];
         if (!effectiveCoachId || effectiveCoachId === 'coach') {
@@ -211,7 +263,7 @@ exports.main = async (event, context) => {
 
     // 2. 如果用户提到了教练姓名，尝试匹配
     if (mentionedCoachName) {
-        const coachMatch = await db.collection('coaches').where({
+        const coachMatch = await db.collection('coach_settings').where({
             name: db.RegExp({ regexp: mentionedCoachName, options: 'i' })
         }).get();
         if (coachMatch.data.length === 1) {
@@ -234,17 +286,16 @@ exports.main = async (event, context) => {
             {
                 role: 'system',
                 content: `你是一个专业的体育预约助手。${coachContext} ${studentContext}
-【核心规则】 (非常重要，请严格遵守)
-1. 当前北京时间是：${dateString} ${timeString} (${dayOfWeek})。
-2. 严禁在回复中输出任何形式的 XML 标签（如 <tool_call>、<arg_key> 等）。
-3. 必须通过标准的 tool_calls 机制来调用工具。不要在文本中模拟工具调用过程。
-4. **[重要] 教练定位逻辑**：
-    - 如果 coachId 为空或不明确，请通过 \`get_student_profile\` 确认。
-    - 如果无法通过姓名匹配教练，请礼貌地让用户提供教练的数字 ID (coachId)。
-5. **[重要] 课时校验**：预约前先检查课时余额。如果余额为 0 或不足，告知学员。
-6. 预约前必须确认“姓名”和“电话号码”。
-7. 查询结果中的 local_time 即为展示给用户的北京时间。
-请以亲切、高效的语气回复。`
+【当前时间】
+今天是：${dateString} ${timeString} (${dayOfWeek})。请务必根据此时间上下文理解用户的“今天”、“明天”或“几点”等相对时间概念。
+
+【核心规则】
+1. **[重要] 日期优先**：如果用户询问“什么时候有空”或“今天/明天能不能约”，请优先使用 get_available_slots 查询。如果用户未指定日期，默认查询 ${dateString} (今天)。
+2. **[重要] 预约检查**：在执行 create_booking_request 之前，必须先调用 get_available_slots 确认用户选择的时间段是空闲的。
+3. **[重要] 状态反馈**：查询结果会显示 existing_bookings (已有预约) 和 locks (锁定不可约)。如果查询结果为空，说明该日期目前完全空闲。
+4. **定位教练**：若不明确哪位教练，优先通过 get_student_profile 确认；否则礼貌询问用户。
+5. **课时校验**：余额不足（remainingHours <= 0）时，婉拒预约并提醒充值。
+6. **合规提示**：严禁输出任何 XML 标签。必须使用标准 tool_calls 机制。`
             },
             ...messages
         ];
