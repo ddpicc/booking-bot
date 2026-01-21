@@ -55,6 +55,31 @@ const getDateKey = (value) => {
     return d ? d.toISOString().slice(0, 10) : null;
 };
 
+// 容错：解析 XML 形式的工具调用
+const parseXmlToolCalls = (content) => {
+    if (!content || !content.includes('<tool_call>')) return null;
+    const toolCalls = [];
+    const toolCallRegex = /<tool_call>([\s\S]*?)<\/tool_call>/g;
+    let match;
+    while ((match = toolCallRegex.exec(content)) !== null) {
+        const inner = match[1];
+        const nameMatch = inner.match(/^([^\n<]+)/);
+        const name = nameMatch ? nameMatch[1].trim() : 'get_available_slots';
+        const args = {};
+        const argRegex = /<arg_key>([\s\S]*?)<\/arg_key>\s*<arg_value>([\s\S]*?)(?:<\/arg_value>|$)/g;
+        let argMatch;
+        while ((argMatch = argRegex.exec(inner)) !== null) {
+            args[argMatch[1].trim()] = argMatch[2].trim();
+        }
+        toolCalls.push({
+            id: `call_${Math.random().toString(36).slice(2, 9)}`,
+            type: 'function',
+            function: { name, arguments: JSON.stringify(args) }
+        });
+    }
+    return toolCalls.length ? toolCalls : null;
+};
+
 // --- AI 助手核心逻辑 ---
 async function handleToolCall(toolCall, coachId, openId) {
     const { name, arguments: argsString } = toolCall.function;
@@ -85,16 +110,16 @@ async function handleToolCall(toolCall, coachId, openId) {
     if (name === 'get_available_slots') {
         const { date } = args;
         const { start, end } = getDayRange(date);
-        const bookings = await db.collection('bookings').where({
-            coachId, status: _.neq('cancelled'), startTime: _.gte(start).and(_.lt(end))
-        }).get();
-        const locks = await db.collection('locks').where({
-            coachId, startTime: _.gte(start).and(_.lt(end))
-        }).get();
+        const rangeCondition = { coachId, status: _.neq('cancelled'), startTime: _.gte(start).and(_.lt(end)) };
+        const dateCondition = { coachId, date };
+        const bookings = await db.collection('bookings').where(_.or([rangeCondition, dateCondition])).get();
+        const lockRange = { coachId, startTime: _.gte(start).and(_.lt(end)) };
+        const lockDate = { coachId, date };
+        const locks = await db.collection('locks').where(_.or([lockRange, lockDate])).get();
 
         return JSON.stringify({
             date,
-            existing_bookings: bookings.data.map(b => `${formatLocalTime(start)}-${formatLocalTime(end)} (${b.serviceName})`),
+            existing_bookings: bookings.data.map(b => `${formatLocalTime(b.startTime)}-${formatLocalTime(b.endTime)} (${b.serviceName})`),
             locks: locks.data.map(l => `${formatLocalTime(l.startTime)}-${formatLocalTime(l.endTime)} (锁定: ${l.reason || '无原因'})`)
         });
     }
@@ -149,17 +174,36 @@ app.post('/api/assistant', async (req, res) => {
             if (coachMatch.data.length === 1) effectiveCoachId = coachMatch.data[0]._id;
         }
 
-        const systemPrompt = `你是一个专业的体育预约助手。当前北京时间：${currentDate || new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}。
-学员信息：${studentInfo ? studentInfo.name : '未知'}(余额:${studentInfo ? studentInfo.remainingHours : 0})。
-教练信息：${effectiveCoachId || 'test_coach_001'}。
-【规则】
-1. 预约前必须通过 get_available_slots 检查冲突。
-2. 若无法定位教练，优先通过 get_student_profile 确认，否则询问用户。
-3. 余额不足 0 时禁止预约。`;
+        const now = currentDate ? new Date(currentDate) : new Date();
+        const dateString = now.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
+        const timeString = now.toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
+        const dayOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
 
-        const response = await axios.post(API_URL, {
+        const coachContext = effectiveCoachId && effectiveCoachId !== 'coach'
+            ? `你正在为教练（ID: ${effectiveCoachId}）提供服务。`
+            : '你目前还不清楚是在为哪位教练提供服务。';
+
+        const studentContext = studentInfo
+            ? `学员姓名：${studentInfo.name}，剩余课时：${studentInfo.remainingHours}。`
+            : '当前尚未识别到该学员的录入信息。';
+
+        let currentMessages = [
+            {
+                role: 'system',
+                content: `你是一个专业的体育预约助手。${coachContext} ${studentContext}
+【核心规则】
+1. 当前北京时间是：${dateString} ${timeString} (${dayOfWeek})。
+2. 预约/查询前必须通过 get_available_slots 检查冲突。
+3. 若无法定位教练，优先通过 get_student_profile 确认；否则礼貌询问用户提供 coachId。
+4. 余额不足禁止预约。
+5. 严禁在回复中输出 XML 标签，必须用标准 tool_calls。`
+            },
+            ...messages
+        ];
+
+        let response = await axios.post(API_URL, {
             model: MODEL,
-            messages: [{ role: 'system', content: systemPrompt }, ...messages],
+            messages: currentMessages,
             tools: [
                 { type: 'function', function: { name: 'get_student_profile', description: '获取学员资料' } },
                 { type: 'function', function: { name: 'get_available_slots', parameters: { type: 'object', properties: { date: { type: 'string' } } } } },
@@ -169,30 +213,29 @@ app.post('/api/assistant', async (req, res) => {
         }, { headers: { 'Authorization': `Bearer ${API_KEY}` } });
 
         let message = response.data.choices[0].message;
+        // 容错：如果模型用文本描述了工具调用
+        const xmlCalls = parseXmlToolCalls(message.content);
+        if (xmlCalls && !message.tool_calls) {
+            message.tool_calls = xmlCalls;
+            message.content = message.content.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '').trim() || '正在处理...';
+        }
+
         if (message.tool_calls) {
+            currentMessages.push(message);
             for (const toolCall of message.tool_calls) {
                 const rawResult = await handleToolCall(toolCall, effectiveCoachId || 'test_coach_001', OPENID);
-                let parsed;
-                try { parsed = JSON.parse(rawResult); } catch (_) { parsed = rawResult; }
-
-                // 针对 get_available_slots 做友好输出
-                if (toolCall.function.name === 'get_available_slots' && parsed && parsed.date) {
-                    const locks = parsed.locks || [];
-                    const bookings = parsed.existing_bookings || [];
-                    const parts = [];
-                    if (bookings.length === 0 && locks.length === 0) {
-                        parts.push(`日期 ${parsed.date} 当前没有预约或锁定，您可自由选择时间。`);
-                    } else {
-                        if (bookings.length) parts.push(`已有预约: ${bookings.join('；')}`);
-                        if (locks.length) parts.push(`已锁定: ${locks.join('；')}`);
-                    }
-                    message.content = parts.join(' ');
-                } else if (parsed && parsed.message) {
-                    message.content = parsed.message;
-                } else {
-                    message.content = typeof parsed === 'string' ? parsed : rawResult;
-                }
+                currentMessages.push({
+                    role: 'tool',
+                    tool_call_id: toolCall.id,
+                    content: rawResult
+                });
             }
+            // 二次 LLM 生成最终回答
+            response = await axios.post(API_URL, {
+                model: MODEL,
+                messages: currentMessages
+            }, { headers: { 'Authorization': `Bearer ${API_KEY}` } });
+            message = response.data.choices[0].message;
         }
         res.json({ ok: true, reply: message.content });
     } catch (e) {
