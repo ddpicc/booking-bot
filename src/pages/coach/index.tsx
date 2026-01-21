@@ -44,18 +44,18 @@ const CoachHome: React.FC = () => {
       console.log('[Coach] Fetch Results:', { bookingRes, lockRes });
 
       if (bookingRes?.data?.ok && lockRes?.data?.ok) {
-        // 兼容不同返回结构 (data.data / data / result)
-        const bookingList = (bookingRes.data.data || bookingRes.data || bookingRes.result || []) as any[];
-        const lockList = (lockRes.data.data || lockRes.data || lockRes.result || []) as any[];
+        // 仅处理扁平数据（不再兼容旧 data 包裹）
+        const bookingList = bookingRes.data.data || [];
+        const lockList = lockRes.data.data || [];
 
         const remoteBookings = bookingList.map((b: any) => ({
           ...b,
-          id: b._id,
+          id: b._id || b.id,
         }));
 
         const remoteLocks = lockList.map((l: any) => ({
           ...l,
-          id: l._id,
+          id: l._id || l.id,
           studentId: coachId,
           studentName: '已锁定',
           serviceId: 'locked',
@@ -138,6 +138,7 @@ const CoachHome: React.FC = () => {
       Taro.showLoading({ title: '创建中...' });
       const res = await callService('booking', 'create', {
         coachId,
+        date: selectedModalDate,
         studentName,
         phoneNumber,
         serviceId: selectedService?.id || 'manual',
@@ -156,6 +157,7 @@ const CoachHome: React.FC = () => {
       Taro.showLoading({ title: '锁定中...' });
       const res = await callService('lock', 'create', {
         coachId,
+        date: selectedModalDate,
         startTime: start.toISOString(),
         endTime: end.toISOString(),
         reason: lockReason

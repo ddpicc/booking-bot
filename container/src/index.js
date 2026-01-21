@@ -267,15 +267,13 @@ app.post('/api/call', async (req, res) => {
                 }
 
                 const result = await db.collection('bookings').add({
-                    data: {
-                        ...data,
-                        coachId: effectiveCoachId,
-                        date: data.date || getDateKey(start),
-                        studentId: data.studentId || OPENID,
-                        startTime: start,
-                        endTime: end,
-                        createdAt: new Date()
-                    }
+                    ...data,
+                    coachId: effectiveCoachId,
+                    date: data.date || getDateKey(start),
+                    studentId: data.studentId || OPENID,
+                    startTime: start,
+                    endTime: end,
+                    createdAt: new Date()
                 });
                 return res.json({ ok: true, id: result._id });
             }
