@@ -58,7 +58,7 @@ async function handleToolCall(toolCall, coachId, openId) {
     let args = JSON.parse(argsString);
 
     if (name === 'get_student_profile') {
-        const studentRes = await db.collection('students').where({ openid: openId }).get();
+        const studentRes = await db.collection('users').where({ openid: openId }).get();
         if (studentRes.data.length === 0) return JSON.stringify({ ok: false, message: '未找到学员信息' });
         const student = studentRes.data[0];
         return JSON.stringify({ ok: true, studentName: student.name, remainingHours: student.remainingHours });
@@ -123,7 +123,7 @@ app.post('/api/assistant', async (req, res) => {
 app.get('/api/db-check', async (req, res) => {
     console.time('db-check');
     try {
-        const result = await db.collection('coaches').limit(1).get();
+        const result = await db.collection('coach_settings').limit(1).get();
         console.timeEnd('db-check');
         res.json({ ok: true, message: 'Database connected', count: result.data.length });
     } catch (e) {
@@ -142,19 +142,19 @@ app.post('/api/call', async (req, res) => {
     try {
         if (service === 'students') {
             if (action === 'list') {
-                const result = await db.collection('students').where({ coachId: data.coachId || 'COACH_88888' }).get();
+                const result = await db.collection('users').where({ coachId: data.coachId || 'COACH_88888' }).get();
                 console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true, data: result.data });
             }
         }
         if (service === 'booking') {
             if (action === 'deduct') {
-                await db.collection('students').doc(data.studentId).update({ data: { remainingHours: _.inc(-data.hours) } });
+                await db.collection('users').doc(data.studentId).update({ data: { remainingHours: _.inc(-data.hours) } });
                 console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true });
             }
             if (action === 'getCoach') {
-                const result = await db.collection('coaches').doc(data.coachId).get();
+                const result = await db.collection('coach_settings').doc(data.coachId).get();
                 console.timeEnd(`db-${service}-${action}`);
                 return res.json({ ok: true, data: result.data });
             }
