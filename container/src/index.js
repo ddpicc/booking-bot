@@ -171,9 +171,27 @@ app.post('/api/assistant', async (req, res) => {
         let message = response.data.choices[0].message;
         if (message.tool_calls) {
             for (const toolCall of message.tool_calls) {
-                const result = await handleToolCall(toolCall, effectiveCoachId || 'test_coach_001', OPENID);
-                // 简化处理：这里直接反馈工具结果
-                message.content = `[工具调用结果: ${result}]`;
+                const rawResult = await handleToolCall(toolCall, effectiveCoachId || 'test_coach_001', OPENID);
+                let parsed;
+                try { parsed = JSON.parse(rawResult); } catch (_) { parsed = rawResult; }
+
+                // 针对 get_available_slots 做友好输出
+                if (toolCall.function.name === 'get_available_slots' && parsed && parsed.date) {
+                    const locks = parsed.locks || [];
+                    const bookings = parsed.existing_bookings || [];
+                    const parts = [];
+                    if (bookings.length === 0 && locks.length === 0) {
+                        parts.push(`日期 ${parsed.date} 当前没有预约或锁定，您可自由选择时间。`);
+                    } else {
+                        if (bookings.length) parts.push(`已有预约: ${bookings.join('；')}`);
+                        if (locks.length) parts.push(`已锁定: ${locks.join('；')}`);
+                    }
+                    message.content = parts.join(' ');
+                } else if (parsed && parsed.message) {
+                    message.content = parsed.message;
+                } else {
+                    message.content = typeof parsed === 'string' ? parsed : rawResult;
+                }
             }
         }
         res.json({ ok: true, reply: message.content });
@@ -296,6 +314,21 @@ app.post('/api/call', async (req, res) => {
             if (action === 'getCoach') {
                 const result = await db.collection('coach_settings').doc(data.coachId).get();
                 return res.json({ ok: true, data: result.data });
+            }
+            if (action === 'updateCoach') {
+                const coachId = data.coachId || 'test_coach_001';
+                const payload = {
+                    settings: data.settings || {},
+                    updatedAt: new Date()
+                };
+                try {
+                    // 尝试更新
+                    await db.collection('coach_settings').doc(coachId).update({ data: payload });
+                } catch (err) {
+                    // 如果不存在则创建
+                    await db.collection('coach_settings').add({ _id: coachId, ...payload, createdAt: new Date() });
+                }
+                return res.json({ ok: true });
             }
         }
         res.status(400).json({ ok: false, message: 'Invalid service/action' });

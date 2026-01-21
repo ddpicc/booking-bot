@@ -149,6 +149,8 @@ const CoachHome: React.FC = () => {
       }) as any;
       console.log('[Coach] Create Booking Response:', res);
       if (res?.data?.ok) {
+        // 强制刷新当日数据（即便日期未变也重新拉取）
+        fetchData(selectedModalDate);
         setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '预约成功', icon: 'success' });
@@ -164,6 +166,7 @@ const CoachHome: React.FC = () => {
       }) as any;
       console.log('[Coach] Create Lock Response:', res);
       if (res?.data?.ok) {
+        fetchData(selectedModalDate);
         setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '已锁定时间', icon: 'success' });
@@ -219,6 +222,11 @@ const CoachHome: React.FC = () => {
   }, [bookings, selectedDate]);
 
   const pendingCount = bookings.filter(b => b.status === 'pending' && !b.isLocked).length;
+  const getVariantClass = (booking: Booking) => {
+    const key = booking.id || booking.startTime || '';
+    const hash = key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return `variant-${(hash % 3) + 1}`;
+  };
 
   return (
     <View className="coach-page">
@@ -299,6 +307,9 @@ const CoachHome: React.FC = () => {
               }
 
               const booking = item.booking;
+              const variantClass = item.type !== 'locked' && item.status === 'confirmed'
+                ? getVariantClass(booking)
+                : '';
               return (
                 <View key={index} className="coach-timeline-item">
                   <View className="coach-timeline-time">
@@ -306,7 +317,7 @@ const CoachHome: React.FC = () => {
                     <View className={`coach-timeline-time-dot ${item.status === 'pending' ? 'pending' : ''}`} />
                   </View>
                   <View className="coach-timeline-content">
-                    <View className={`coach-booking-card ${item.type === 'locked' ? 'locked' : item.status}`}>
+                    <View className={`coach-booking-card ${item.type === 'locked' ? 'locked' : item.status} ${variantClass}`}>
                       <View className="coach-booking-header">
                         <View>
                           <Text className="coach-booking-type">{item.type === 'locked' ? '锁定' : (booking.serviceName || '课程')}</Text>

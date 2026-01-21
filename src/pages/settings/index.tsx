@@ -59,6 +59,7 @@ const SettingsPage: React.FC = () => {
   const [serviceName, setServiceName] = useState('');
   const [serviceDuration, setServiceDuration] = useState(60);
   const [serviceHasGap, setServiceHasGap] = useState(false);
+  const [serviceGapMinutes, setServiceGapMinutes] = useState(0);
 
   const handleSave = async () => {
     const newSettings = {
@@ -96,11 +97,13 @@ const SettingsPage: React.FC = () => {
       setServiceName(service.name);
       setServiceDuration(service.duration);
       setServiceHasGap(service.hasGap || false);
+      setServiceGapMinutes(service.gapMinutes || bufferTime || 0);
     } else {
       setEditingService(null);
       setServiceName('');
       setServiceDuration(60);
       setServiceHasGap(false);
+      setServiceGapMinutes(bufferTime || 0);
     }
     setShowServiceModal(true);
   };
@@ -115,6 +118,7 @@ const SettingsPage: React.FC = () => {
       name: serviceName,
       duration: serviceDuration,
       hasGap: serviceHasGap,
+      gapMinutes: serviceHasGap ? serviceGapMinutes : 0,
     };
 
     if (editingService) {
@@ -127,6 +131,8 @@ const SettingsPage: React.FC = () => {
       });
       Taro.showToast({ title: '已添加课程', icon: 'success' });
     }
+    // 同步全局课间休息默认值
+    setBufferTime(serviceHasGap ? serviceGapMinutes : bufferTime);
     setShowServiceModal(false);
   };
 
@@ -176,7 +182,7 @@ const SettingsPage: React.FC = () => {
                   <Text className="settings-service-name">{service.name}</Text>
                   <View className="settings-service-tags">
                     <Text className="settings-service-tag">{service.duration} 分钟</Text>
-                    {service.hasGap && <Text className="settings-service-tag gap">包含间歇</Text>}
+                    {service.hasGap && <Text className="settings-service-tag gap">课间 {service.gapMinutes || 0} 分钟</Text>}
                   </View>
                 </View>
                 <View className="settings-service-actions">
@@ -198,37 +204,6 @@ const SettingsPage: React.FC = () => {
                 <Text>暂无课程配置，请点击上方添加</Text>
               </View>
             )}
-          </View>
-        </View>
-
-        <View className="settings-section-card">
-          <Text className="settings-section-heading">课间休息</Text>
-          <View className="settings-buffer-row">
-            <Text className="settings-buffer-value">{bufferTime}分钟</Text>
-            <Text className="settings-buffer-label">课程之间的间隔</Text>
-          </View>
-          <Slider
-            className="settings-slider"
-            min={0}
-            max={60}
-            step={5}
-            value={bufferTime}
-            onChange={(e) => setBufferTime(e.detail.value)}
-            activeColor="#1a73e8"
-            backgroundColor="#e5e7eb"
-            blockColor="#fff"
-            blockSize={24}
-          />
-          <View className="settings-slider-labels">
-            {[0, 10, 15, 30, 45, 60].map((val) => (
-              <Text
-                key={val}
-                className={`settings-slider-label ${bufferTime === val ? 'active' : ''}`}
-                onClick={() => setBufferTime(val)}
-              >
-                {val === 0 ? '无' : (val === 15 ? '15分钟' : `${val}分钟`)}
-              </Text>
-            ))}
           </View>
         </View>
 
@@ -385,6 +360,38 @@ const SettingsPage: React.FC = () => {
                     color="#1a73e8"
                   />
                 </View>
+                {serviceHasGap && (
+                  <View className="settings-form-item">
+                    <Text className="settings-form-label">课间休息时长</Text>
+                    <View className="settings-buffer-row">
+                      <Text className="settings-buffer-value">{serviceGapMinutes} 分钟</Text>
+                      <Text className="settings-buffer-label">为该课程设置专属缓冲</Text>
+                    </View>
+                    <Slider
+                      className="settings-slider"
+                      min={0}
+                      max={60}
+                      step={5}
+                      value={serviceGapMinutes}
+                      onChange={(e) => setServiceGapMinutes(e.detail.value)}
+                      activeColor="#1a73e8"
+                      backgroundColor="#e5e7eb"
+                      blockColor="#fff"
+                      blockSize={24}
+                    />
+                    <View className="settings-slider-labels">
+                      {[0, 10, 15, 30, 45, 60].map((val) => (
+                        <Text
+                          key={val}
+                          className={`settings-slider-label ${serviceGapMinutes === val ? 'active' : ''}`}
+                          onClick={() => setServiceGapMinutes(val)}
+                        >
+                          {val === 0 ? '无' : `${val} 分钟`}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
               </View>
             </View>
             <View className="settings-modal-actions">

@@ -3,6 +3,7 @@ export interface Service {
   name: string;
   duration: number; // 分钟
   hasGap?: boolean; // 是否有课间休息
+  gapMinutes?: number; // 课间休息时长
   price?: number;
   description?: string;
 }

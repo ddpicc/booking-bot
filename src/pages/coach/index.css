@@ -22,7 +22,7 @@
   overflow-x: hidden;
   max-width: 100vw;
   box-sizing: border-box;
-  padding: 180px 0 120px;
+  padding: calc(200px + env(safe-area-inset-top)) 0 calc(140px + env(safe-area-inset-bottom));
   color: #202124;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -376,6 +376,22 @@
   background: linear-gradient(135deg, #4285f4, #1967d2);
   color: white;
   box-shadow: 0 10px 25px rgba(26, 115, 232, 0.3);
+}
+
+/* Confirmed color variants */
+.coach-booking-card.variant-1 {
+  background: linear-gradient(135deg, #4285f4, #1967d2);
+  box-shadow: 0 10px 25px rgba(26, 115, 232, 0.3);
+}
+
+.coach-booking-card.variant-2 {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.25);
+}
+
+.coach-booking-card.variant-3 {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  box-shadow: 0 10px 25px rgba(234, 88, 12, 0.25);
 }
 
 .coach-booking-header {
