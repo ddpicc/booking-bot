@@ -27,7 +27,7 @@ app.use((req, res, next) => {
 // --- 配置集 ---
 const API_KEY = 'sk-M9dAAx2KVKwC0b73XT7XRpyMbMs37Z1jIAqyKPwkjDeeR3ez';
 const API_URL = 'https://www.dmxapi.cn/v1/chat/completions';
-const MODEL = 'GLM-4.5-Flash';
+const MODEL = 'gpt-5-nano';
 
 // --- 工具函数 ---
 function formatLocalTime(date) {
