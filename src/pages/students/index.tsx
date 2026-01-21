@@ -7,6 +7,8 @@ import './index.css';
 
 const StudentsPage: React.FC = () => {
     const { students, setStudents, updateStudent } = useStore();
+    const router = Taro.useRouter();
+    const coachId = router.params.coachId || 'test_coach_001';
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('全部');
     const [loading, setLoading] = useState(false);
@@ -28,9 +30,15 @@ const StudentsPage: React.FC = () => {
     const fetchStudents = async () => {
         setLoading(true);
         try {
-            const res = await callService('students', 'list', { coachId: 'COACH_88888' }) as any;
-            if (res.result && res.result.ok) {
-                setStudents(res.result.data);
+            const res = await callService('students', 'list', { coachId }) as any;
+            if (res?.data?.ok) {
+                const normalized = (res.data.data || []).map((item: any) => ({
+                    ...item,
+                    id: item._id || item.id,
+                }));
+                setStudents(normalized);
+            } else {
+                console.warn('[Students] List failed', res);
             }
         } catch (error) {
             console.error('Fetch students error:', error);
@@ -41,7 +49,7 @@ const StudentsPage: React.FC = () => {
 
     const filteredStudents = useMemo(() => {
         return students.filter(s => {
-            const matchesSearch = s.name.includes(searchQuery) || s.phoneNumber.includes(searchQuery);
+            const matchesSearch = (s.name || '').includes(searchQuery) || (s.phoneNumber || '').includes(searchQuery);
             const matchesFilter = selectedFilter === '全部' || s.sportType === selectedFilter;
             return matchesSearch && matchesFilter;
         });
@@ -63,11 +71,12 @@ const StudentsPage: React.FC = () => {
                             studentId: studentId,
                             hours: 1
                         }) as any;
-                        if (result.result && result.result.ok) {
-                            updateStudent(studentId, { remainingHours: result.result.remainingHours });
+                        if (result?.data?.ok) {
+                            // 直接刷新列表，避免本地课时不同步
+                            fetchStudents();
                             Taro.showToast({ title: '核销成功', icon: 'success' });
                         } else {
-                            Taro.showToast({ title: (result.result as any).message || '核销失败', icon: 'none' });
+                            Taro.showToast({ title: (result?.data as any)?.message || '核销失败', icon: 'none' });
                         }
                     } catch (error) {
                         Taro.showToast({ title: '系统错误', icon: 'none' });
@@ -88,22 +97,23 @@ const StudentsPage: React.FC = () => {
         Taro.showLoading({ title: '保存中...' });
         try {
             const result = await callService('students', 'create', {
-                data: {
-                    name: newName,
-                    phoneNumber: newPhone,
-                    courseName: newCourse || '未设置课程',
-                    remainingHours: Number(newHours),
-                    totalHours: Number(newHours),
-                    unitPrice: Number(newPrice),
-                    sportType: selectedFilter === '全部' ? '羽毛球' : selectedFilter,
-                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'
-                }
+                coachId,
+                name: newName,
+                phoneNumber: newPhone,
+                courseName: newCourse || '未设置课程',
+                remainingHours: Number(newHours),
+                totalHours: Number(newHours),
+                unitPrice: Number(newPrice),
+                sportType: selectedFilter === '全部' ? '羽毛球' : selectedFilter,
+                avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'
             }) as any;
-            if (result.result && result.result.ok) {
+            if (result?.data?.ok) {
                 Taro.showToast({ title: '添加成功', icon: 'success' });
                 setShowAddModal(false);
                 resetForm();
                 fetchStudents();
+            } else {
+                Taro.showToast({ title: (result?.data as any)?.message || '添加失败', icon: 'none' });
             }
         } catch (error) {
             Taro.showToast({ title: '添加失败', icon: 'none' });

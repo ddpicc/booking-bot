@@ -35,18 +35,25 @@ const CoachHome: React.FC = () => {
   const fetchData = useCallback(async (date: string) => {
     setLoading(true);
     try {
+      console.log(`[Coach] Fetching data for ${date}, coachId: ${coachId}`);
       const [bookingRes, lockRes] = await Promise.all([
         callService('booking', 'listByDate', { coachId, date }),
         callService('lock', 'listByDate', { coachId, date })
       ]) as any;
 
-      if (bookingRes.data?.ok && lockRes.data?.ok) {
-        const remoteBookings = bookingRes.data.data.map((b: any) => ({
+      console.log('[Coach] Fetch Results:', { bookingRes, lockRes });
+
+      if (bookingRes?.data?.ok && lockRes?.data?.ok) {
+        // 兼容不同返回结构 (data.data / data / result)
+        const bookingList = (bookingRes.data.data || bookingRes.data || bookingRes.result || []) as any[];
+        const lockList = (lockRes.data.data || lockRes.data || lockRes.result || []) as any[];
+
+        const remoteBookings = bookingList.map((b: any) => ({
           ...b,
           id: b._id,
         }));
 
-        const remoteLocks = lockRes.result.data.map((l: any) => ({
+        const remoteLocks = lockList.map((l: any) => ({
           ...l,
           id: l._id,
           studentId: coachId,
@@ -81,7 +88,8 @@ const CoachHome: React.FC = () => {
         status: status
       }) as any;
 
-      if (res.data?.ok) {
+      console.log('[Coach] Update Status Response:', res);
+      if (res?.data?.ok) {
         updateBookingStatus(id, status);
         Taro.showToast({ title: status === 'confirmed' ? '已通过' : '已拒绝', icon: 'success' });
       } else {
@@ -138,7 +146,8 @@ const CoachHome: React.FC = () => {
         endTime: end.toISOString(),
         status: 'confirmed'
       }) as any;
-      if (res.data?.ok) {
+      console.log('[Coach] Create Booking Response:', res);
+      if (res?.data?.ok) {
         setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '预约成功', icon: 'success' });
@@ -151,7 +160,8 @@ const CoachHome: React.FC = () => {
         endTime: end.toISOString(),
         reason: lockReason
       }) as any;
-      if (res.data?.ok) {
+      console.log('[Coach] Create Lock Response:', res);
+      if (res?.data?.ok) {
         setSelectedDate(selectedModalDate);
         handleCloseModal();
         Taro.showToast({ title: '已锁定时间', icon: 'success' });

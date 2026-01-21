@@ -25,17 +25,26 @@ const SettingsPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await callService('booking', 'getCoach', { coachId }) as any;
-      if (res.data && res.data.ok) {
-        const data = res.data.data;
-        setCoachSettings(data.settings);
-        setServices(data.settings.services || []);
+      console.log('[Settings] Fetch Coach Response:', res);
+      if (res?.data && res.data.ok) {
+        // 兼容不同返回结构，安全合并默认值，避免 undefined
+        const payload = res.data.data || res.data;
+        const cloudSettings = payload.settings || payload || {};
+        const mergedSettings = {
+          ...coachSettings,
+          ...cloudSettings,
+          services: cloudSettings.services || coachSettings.services || [],
+        };
+
+        setCoachSettings(mergedSettings);
+        setServices(mergedSettings.services || []);
         // Update local states
-        setBufferTime(data.settings.bufferTime);
-        setAutoAccept(data.settings.autoAccept);
-        setAllowCancel(data.settings.allowCancelWithin24h);
-        setDailyLimit(data.settings.dailyLimitEnabled);
-        setMinAdvance(data.settings.minAdvanceHours);
-        setMaxFuture(data.settings.maxFutureDays);
+        setBufferTime(mergedSettings.bufferTime ?? bufferTime);
+        setAutoAccept(mergedSettings.autoAccept ?? autoAccept);
+        setAllowCancel(mergedSettings.allowCancelWithin24h ?? allowCancel);
+        setDailyLimit(mergedSettings.dailyLimitEnabled ?? dailyLimit);
+        setMinAdvance(mergedSettings.minAdvanceHours ?? minAdvance);
+        setMaxFuture(mergedSettings.maxFutureDays ?? maxFuture);
       }
     } catch (e) {
       console.error(e);
@@ -69,7 +78,8 @@ const SettingsPage: React.FC = () => {
         coachId,
         settings: newSettings
       }) as any;
-      if (res.data && res.data.ok) {
+      console.log('[Settings] Update Coach Response:', res);
+      if (res?.data && res.data.ok) {
         setCoachSettings(newSettings);
         Taro.showToast({ title: '已同步到云端', icon: 'success' });
       }

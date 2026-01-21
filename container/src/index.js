@@ -49,6 +49,12 @@ const getDayRange = (dateString) => {
     return { start, end };
 };
 
+const getDateKey = (value) => {
+    if (!value) return null;
+    const d = toDate(value);
+    return d ? d.toISOString().slice(0, 10) : null;
+};
+
 // --- AI 助手核心逻辑 ---
 async function handleToolCall(toolCall, coachId, openId) {
     const { name, arguments: argsString } = toolCall.function;
@@ -203,10 +209,10 @@ app.post('/api/call', async (req, res) => {
                 console.log(`[Lock] Querying: coachId=${effectiveCoachId}, date=${data.date}`);
                 console.log(`[Lock] Range UTC: ${start.toISOString()} - ${end.toISOString()}`);
 
-                const result = await db.collection('locks').where({
-                    coachId: effectiveCoachId,
-                    startTime: _.gte(start).and(_.lt(end))
-                }).get();
+                // 同时兼容按日期字段和按时间范围的历史数据
+                const rangeCondition = { coachId: effectiveCoachId, startTime: _.gte(start).and(_.lt(end)) };
+                const dateCondition = { coachId: effectiveCoachId, date: data.date };
+                const result = await db.collection('locks').where(_.or([rangeCondition, dateCondition])).get();
 
                 console.log(`[Lock] Query result count: ${result.data.length}`);
                 if (result.data.length === 0) {
@@ -234,6 +240,7 @@ app.post('/api/call', async (req, res) => {
                 const result = await db.collection('locks').add({
                     ...data,
                     coachId: effectiveCoachId,
+                    date: data.date || getDateKey(start),
                     startTime: start,
                     endTime: end,
                     createdAt: new Date()
@@ -263,6 +270,7 @@ app.post('/api/call', async (req, res) => {
                     data: {
                         ...data,
                         coachId: effectiveCoachId,
+                        date: data.date || getDateKey(start),
                         studentId: data.studentId || OPENID,
                         startTime: start,
                         endTime: end,
@@ -274,10 +282,9 @@ app.post('/api/call', async (req, res) => {
             if (action === 'listByDate') {
                 const { start, end } = getDayRange(data.date);
                 console.log(`[Booking] Querying: coachId=${effectiveCoachId}, date=${data.date}`);
-                const result = await db.collection('bookings').where({
-                    coachId: effectiveCoachId,
-                    startTime: _.gte(start).and(_.lt(end))
-                }).get();
+                const rangeCondition = { coachId: effectiveCoachId, startTime: _.gte(start).and(_.lt(end)) };
+                const dateCondition = { coachId: effectiveCoachId, date: data.date };
+                const result = await db.collection('bookings').where(_.or([rangeCondition, dateCondition])).get();
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'updateStatus') {

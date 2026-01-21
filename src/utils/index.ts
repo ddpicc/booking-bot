@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import Taro from '@tarojs/taro';
 import { Booking, CoachSettings, TimeSlot } from '../types';
 
 // 生成唯一ID
@@ -114,20 +115,33 @@ export const getTodayEnd = (): string => {
 };
 // 统一调用云托管的封装
 export const callCloudContainer = async (path: string, data: any = {}) => {
-  return await Taro.cloud.callContainer({
-    path,
-    method: 'POST',
-    header: {
-      'X-WX-SERVICE': 'booking-bot', // 替换为您的云托管服务名
-    },
-    data,
-  });
+  console.log(`[Cloud] Request: ${path}`, data);
+  try {
+    const res = await Taro.cloud.callContainer({
+      path,
+      method: 'POST',
+      header: {
+        'X-WX-SERVICE': 'booking-bot',
+      },
+      data,
+    });
+    console.log(`[Cloud] Response: ${path}`, res);
+    return res;
+  } catch (e) {
+    console.error(`[Cloud] Error: ${path}`, e);
+    throw e;
+  }
 };
 
 // 兼容原有的业务调用逻辑
 export const callService = async (service: string, action: string, data: any = {}) => {
-  return await callCloudContainer('/api/call', { service, action, data });
+  const res = await callCloudContainer('/api/call', { service, action, data });
+  // 统一返回格式，兼容 callFunction 返回 result 的情况
+  const normalized = (res && (res as any).data !== undefined)
+    ? (res as any).data
+    : (res as any).result;
+  return {
+    ...res,
+    data: normalized,
+  };
 };
-
-// 导出 Taro 供内部使用（如果需要）
-import Taro from '@tarojs/taro';

@@ -18,9 +18,15 @@ const assertRequired = (data, keys) => {
 };
 
 const getDayRange = (dateString) => {
-  const start = new Date(`${dateString}T00:00:00.000Z`);
-  const end = new Date(`${dateString}T23:59:59.999Z`);
+  const start = new Date(`${dateString}T00:00:00.000+08:00`);
+  const end = new Date(`${dateString}T23:59:59.999+08:00`);
   return { start, end };
+};
+
+const getDateKey = (value) => {
+  if (!value) return null;
+  const d = toDate(value);
+  return d ? d.toISOString().slice(0, 10) : null;
 };
 
 exports.main = async (event, context) => {
@@ -53,6 +59,7 @@ exports.main = async (event, context) => {
 
       const payload = {
         coachId,
+        date: event.date || getDateKey(start),
         startTime: start,
         endTime: end,
         reason: event.reason || '私人时间',
@@ -73,11 +80,9 @@ exports.main = async (event, context) => {
     if (action === 'listByDate') {
       assertRequired(event, ['coachId', 'date']);
       const { start, end } = getDayRange(event.date);
-      const res = await db.collection('locks').where({
-        coachId: event.coachId,
-        startTime: _.gte(start),
-        startTime: _.lt(end),
-      }).get();
+      const rangeCondition = { coachId: event.coachId, startTime: _.gte(start).and(_.lt(end)) };
+      const dateCondition = { coachId: event.coachId, date: event.date };
+      const res = await db.collection('locks').where(_.or([rangeCondition, dateCondition])).get();
       return { ok: true, data: res.data };
     }
 
