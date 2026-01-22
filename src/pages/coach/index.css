@@ -738,6 +738,141 @@
   justify-content: center;
 }
 
+/* Login Overlay */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 36px 0 0;
+  box-sizing: border-box;
+  z-index: 1300;
+}
+
+.login-panel {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 28px 28px 0 0;
+  padding: 28px 22px 30px;
+  box-shadow: 0 -16px 48px rgba(15, 23, 42, 0.25);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.login-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.login-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #202124;
+}
+
+.login-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f3f4;
+  text-align: center;
+  line-height: 36px;
+  color: #5f6368;
+  font-size: 18px;
+}
+
+.login-desc {
+  font-size: 14px;
+  color: #5f6368;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.login-form {
+  background: linear-gradient(180deg, rgba(241, 243, 244, 0.9), rgba(255, 255, 255, 0.95));
+  border-radius: 16px;
+  border: 1px solid #e6ebf5;
+  padding: 0 18px;
+  margin-bottom: 22px;
+}
+
+.login-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+}
+
+.login-row:not(:last-child) {
+  border-bottom: 1px solid #eef2f7;
+}
+
+.row-label {
+  width: 70px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #5f6368;
+}
+
+.avatar-wrapper {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  border: 1px solid #dfe5ee;
+  object-fit: cover;
+}
+
+.nickname-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #202124;
+}
+
+.nickname-input-placeholder {
+  color: #9aa0a6;
+}
+
+.nickname-fetch-btn {
+  margin-left: 12px;
+  padding: 10px 14px;
+  background: #eef2f7;
+  border-radius: 12px;
+  color: #1a73e8;
+  font-size: 14px;
+  border: 1px solid #e1e6ef;
+  font-weight: 700;
+}
+
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-btn {
+  background: linear-gradient(135deg, #ffb347, #ff6b6b, #845ef7);
+  color: #0f172a;
+  border: none;
+  border-radius: 18px;
+  padding: 16px 0;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 14px 28px rgba(255, 107, 107, 0.28);
+}
+
 /* Group Lesson Card */
 .coach-booking-card.group {
   background: #111827;

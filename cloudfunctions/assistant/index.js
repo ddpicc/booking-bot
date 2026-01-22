@@ -4,6 +4,8 @@ const axios = require('axios');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const _ = db.command;
+const USERS_COLLECTION = 'users';
+const CLIENTS_COLLECTION = 'client';
 
 const API_KEY = 'sk-M9dAAx2KVKwC0b73XT7XRpyMbMs37Z1jIAqyKPwkjDeeR3ez';
 const API_URL = 'https://www.dmxapi.cn/v1/chat/completions';
@@ -120,7 +122,7 @@ async function handleToolCall(toolCall, coachId, openId) {
     }
 
     if (name === 'get_student_profile') {
-        const studentRes = await db.collection('users').where({ openid: openId }).get();
+        const studentRes = await db.collection(CLIENTS_COLLECTION).where({ openid: openId }).get();
         if (studentRes.data.length === 0) {
             return JSON.stringify({ ok: false, message: '未找到您的学员信息，请先在“学员管理”录入。' });
         }
@@ -253,7 +255,7 @@ exports.main = async (event, context) => {
     let studentInfo = null;
 
     // 1. 获取学员信息
-    const studentRes = await db.collection('users').where({ openid: OPENID }).get();
+    const studentRes = await db.collection(CLIENTS_COLLECTION).where({ openid: OPENID }).get();
     if (studentRes.data.length > 0) {
         studentInfo = studentRes.data[0];
         const isPlaceholder = !effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888';

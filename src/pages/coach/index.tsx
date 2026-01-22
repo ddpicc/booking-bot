@@ -2,21 +2,25 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, Button, Picker, Input, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useStore } from '../../store';
-import { Booking } from '../../types';
+import { Booking, User } from '../../types';
 import { formatTime, callService } from '../../utils';
 import dayjs from 'dayjs';
 import './index.css';
 
+const avatarPlaceholder = 'https://placehold.jp/32/1f2937/ffffff/200x200.png?text=%E5%A4%B4%E5%83%8F';
+
 const CoachHome: React.FC = () => {
   const router = Taro.useRouter();
   const coachIdFromQuery = router.params.coachId || 'test_coach_001';
-  const coachId = coachIdFromQuery;
+  const [coachId, setCoachId] = useState(coachIdFromQuery);
 
   const {
     bookings,
     updateBookingStatus,
     setBookings,
     services,
+    currentUser,
+    setCurrentUser,
   } = useStore();
 
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
@@ -30,6 +34,10 @@ const CoachHome: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [serviceIndex, setServiceIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showLoginOverlay, setShowLoginOverlay] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [nickName, setNickName] = useState('');
+  const [initializingUser, setInitializingUser] = useState(true);
 
   // 从云端获取数据
   const fetchData = useCallback(async (date: string) => {
@@ -78,6 +86,49 @@ const CoachHome: React.FC = () => {
   useEffect(() => {
     fetchData(selectedDate);
   }, [selectedDate, fetchData]);
+
+  const bootstrapUser = useCallback(async () => {
+    try {
+      const res = await callService('auth', 'bootstrap', { coachId: coachIdFromQuery }) as any;
+      const profile = res?.data?.data;
+      if (profile) {
+        const normalized: User = {
+          ...profile,
+          id: profile._id || profile.id,
+          coachId: profile.coachId || coachIdFromQuery,
+          avatar: profile.avatar || '',
+          name: profile.name || '教练',
+          role: 'coach',
+        };
+        setCurrentUser(normalized);
+        setCoachId(normalized.coachId || coachIdFromQuery);
+        setAvatarUrl(normalized.avatar || '');
+        setNickName(normalized.name || '');
+        Taro.setStorageSync('bookingbot_user', normalized);
+        setShowLoginOverlay(false);
+      } else {
+        setShowLoginOverlay(true);
+      }
+    } catch (error) {
+      console.warn('[Coach] Bootstrap user failed', error);
+      setShowLoginOverlay(true);
+    } finally {
+      setInitializingUser(false);
+    }
+  }, [coachIdFromQuery, setAvatarUrl, setCoachId, setCurrentUser, setInitializingUser, setNickName, setShowLoginOverlay]);
+
+  // 登录检查：首次进入加载云端绑定资料
+  useEffect(() => {
+    const savedProfile = Taro.getStorageSync('bookingbot_user');
+    if (savedProfile && savedProfile.id) {
+      setCurrentUser(savedProfile);
+      setCoachId(savedProfile.coachId || coachIdFromQuery);
+      setAvatarUrl(savedProfile.avatar || '');
+      setNickName(savedProfile.name || '');
+      setShowLoginOverlay(false);
+    }
+    bootstrapUser();
+  }, [bootstrapUser, coachIdFromQuery, setAvatarUrl, setCoachId, setCurrentUser, setNickName, setShowLoginOverlay]);
 
   // 处理预约状态更新
   const handleStatusUpdate = async (id: string, status: Booking['status']) => {
@@ -226,6 +277,71 @@ const CoachHome: React.FC = () => {
     const key = booking.id || booking.startTime || '';
     const hash = key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
     return `variant-${(hash % 3) + 1}`;
+  };
+
+  const handleChooseAvatar = (e: any) => {
+    const url = e?.detail?.avatarUrl;
+    if (url) {
+      setAvatarUrl(url);
+    }
+  };
+
+  const handleNickInput = (e: any) => {
+    setNickName(e.detail.value);
+  };
+
+  const handleGetUserProfile = () => {
+    Taro.getUserProfile({
+      desc: '用于完善教练资料',
+      success: (res) => {
+        const { nickName: wxNick, avatarUrl: wxAvatar } = res.userInfo || {};
+        if (wxNick) setNickName(wxNick);
+        if (wxAvatar) setAvatarUrl(wxAvatar);
+      },
+      fail: () => {
+        Taro.showToast({ title: '无法获取昵称，请手动输入', icon: 'none' });
+      },
+    });
+  };
+
+  const handleSubmitLogin = async () => {
+    const finalName = nickName.trim() || '教练';
+    const finalAvatar = avatarUrl || avatarPlaceholder;
+    Taro.showLoading({ title: '提交中...' });
+    try {
+      const res = await callService('auth', 'bindProfile', {
+        coachId,
+        name: finalName,
+        avatar: finalAvatar,
+      }) as any;
+      const profile = res?.data?.data;
+      if (res?.data?.ok && profile) {
+        const normalized: User = {
+          ...profile,
+          id: profile._id || profile.id,
+          coachId: profile.coachId || coachId,
+          avatar: profile.avatar || finalAvatar,
+          name: profile.name || finalName,
+          role: 'coach',
+        };
+        setCurrentUser(normalized);
+        setCoachId(normalized.coachId || coachId);
+        Taro.setStorageSync('bookingbot_user', normalized);
+        setShowLoginOverlay(false);
+        Taro.showToast({ title: '登录成功', icon: 'success', duration: 1200 });
+        return;
+      }
+      Taro.showToast({ title: '登录失败，请重试', icon: 'none' });
+    } catch (error) {
+      console.error('[Coach] Bind profile failed:', error);
+      Taro.showToast({ title: '网络异常，请稍后再试', icon: 'none' });
+    } finally {
+      Taro.hideLoading();
+    }
+  };
+
+  const handleSkipLogin = () => {
+    setShowLoginOverlay(false);
   };
 
   return (
@@ -443,6 +559,41 @@ const CoachHome: React.FC = () => {
           <Text className="coach-nav-item-bottom-text">设置</Text>
         </View>
       </View>
+
+      {showLoginOverlay && !initializingUser && (
+        <View className="login-overlay">
+          <View className="login-panel">
+            <View className="login-header">
+              <Text className="login-title">登录</Text>
+              <Text className="login-close" onClick={handleSkipLogin}>×</Text>
+            </View>
+            <Text className="login-desc">登录后可同步预约数据、保存学员信息，并获得更精准的智能排课。</Text>
+            <View className="login-form">
+              <View className="login-row">
+                <Text className="row-label">头像</Text>
+                <Button className="avatar-wrapper" openType="chooseAvatar" onChooseAvatar={handleChooseAvatar}>
+                  <Image className="avatar" src={avatarUrl || avatarPlaceholder} mode="aspectFill" />
+                </Button>
+              </View>
+              <View className="login-row">
+                <Text className="row-label">昵称</Text>
+                <Input
+                  type="nickname"
+                  className="nickname-input"
+                  value={nickName}
+                  onInput={handleNickInput}
+                  placeholder="请输入昵称"
+                  placeholderClass="nickname-input-placeholder"
+                />
+                <Button className="nickname-fetch-btn" onClick={handleGetUserProfile}>一键获取</Button>
+              </View>
+            </View>
+            <View className="login-actions">
+              <Button className="login-btn" onClick={handleSubmitLogin}>完成登录</Button>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };

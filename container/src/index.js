@@ -17,6 +17,8 @@ const cloud = cloudbase.init({
 // 修正：使用默认数据库实例，与小程序端保持一致
 const db = cloud.database();
 const _ = db.command;
+const USERS_COLLECTION = 'users';     // 小程序用户（教练）表
+const CLIENTS_COLLECTION = 'client'; // 教练名下的学员表
 
 // 中间件：日志打印
 app.use((req, res, next) => {
@@ -86,7 +88,7 @@ async function handleToolCall(toolCall, coachId, openId) {
     let args = JSON.parse(argsString);
 
     if (name === 'get_student_profile') {
-        const studentRes = await db.collection('users').where({ openid: openId }).get();
+        const studentRes = await db.collection(CLIENTS_COLLECTION).where({ openid: openId }).get();
         if (studentRes.data.length === 0) return JSON.stringify({ ok: false, message: '未找到学员信息' });
         const student = studentRes.data[0];
         let coachName = '未知';
@@ -163,7 +165,7 @@ app.post('/api/assistant', async (req, res) => {
 
     try {
         // 1. 获取学员与教练绑定关系
-        const studentRes = await db.collection('users').where({ openid: OPENID }).get();
+        const studentRes = await db.collection(CLIENTS_COLLECTION).where({ openid: OPENID }).get();
         if (studentRes.data.length > 0) {
             studentInfo = studentRes.data[0];
             const isPlaceholder = !effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888';
@@ -303,17 +305,46 @@ app.post('/api/call', async (req, res) => {
     const OPENID = req.headers['x-wx-openid'] || 'TEST_WEB_USER';
 
     try {
+        if (service === 'auth') {
+            if (action === 'bootstrap') {
+                const result = await db.collection(USERS_COLLECTION).where({ openid: OPENID }).limit(1).get();
+                if (result.data.length === 0) {
+                    return res.json({ ok: true, data: null });
+                }
+                const user = result.data[0];
+                return res.json({ ok: true, data: { ...user, id: user._id || user.id } });
+            }
+            if (action === 'bindProfile') {
+                const resolvedCoachId = (data && data.coachId) || 'test_coach_001';
+                const payload = {
+                    openid: OPENID,
+                    name: (data && data.name) || '教练',
+                    avatar: (data && data.avatar) || '',
+                    coachId: resolvedCoachId,
+                    role: 'coach',
+                    updatedAt: new Date()
+                };
+                const existing = await db.collection(USERS_COLLECTION).where({ openid: OPENID }).limit(1).get();
+                if (existing.data.length > 0) {
+                    const targetId = existing.data[0]._id;
+                    await db.collection(USERS_COLLECTION).doc(targetId).update({ data: payload });
+                    return res.json({ ok: true, data: { ...existing.data[0], ...payload, id: targetId } });
+                }
+                const createRes = await db.collection(USERS_COLLECTION).add({ ...payload, createdAt: new Date() });
+                return res.json({ ok: true, data: { ...payload, id: createRes._id } });
+            }
+        }
         if (service === 'students') {
             if (action === 'list') {
-                const result = await db.collection('users').where({ coachId: data.coachId || 'test_coach_001' }).get();
+                const result = await db.collection(CLIENTS_COLLECTION).where({ coachId: data.coachId || 'test_coach_001' }).get();
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'create') {
-                const result = await db.collection('users').add({ ...data, createdAt: new Date() });
+                const result = await db.collection(CLIENTS_COLLECTION).add({ ...data, createdAt: new Date() });
                 return res.json({ ok: true, id: result._id });
             }
             if (action === 'getProfile') {
-                const result = await db.collection('users').where({ openid: OPENID }).get();
+                const result = await db.collection(CLIENTS_COLLECTION).where({ openid: OPENID }).get();
                 return res.json({ ok: true, data: result.data[0] || null });
             }
         }
@@ -405,7 +436,7 @@ app.post('/api/call', async (req, res) => {
                 return res.json({ ok: true });
             }
             if (action === 'deduct') {
-                await db.collection('users').doc(data.studentId).update({ data: { remainingHours: _.inc(-data.hours) } });
+                await db.collection(CLIENTS_COLLECTION).doc(data.studentId).update({ data: { remainingHours: _.inc(-data.hours) } });
                 return res.json({ ok: true });
             }
             if (action === 'getCoach') {

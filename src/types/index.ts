@@ -45,10 +45,13 @@ export interface CoachSettings {
 }
 
 export interface User {
-  id: string;
+  _id?: string;
+  id?: string;
+  openid?: string;
+  coachId?: string;
   name: string;
   avatar?: string;
-  role: 'coach';
+  role?: 'coach';
 }
 
 export interface TimeSlot {
