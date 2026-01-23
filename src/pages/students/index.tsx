@@ -100,7 +100,7 @@ const StudentsPage: React.FC = () => {
                 coachId,
                 name: newName,
                 phoneNumber: newPhone,
-                courseName: newCourse || '未设置课程',
+                courseName: newCourse || '未设置服务',
                 remainingHours: Number(newHours),
                 totalHours: Number(newHours),
                 unitPrice: Number(newPrice),
@@ -187,7 +187,7 @@ const StudentsPage: React.FC = () => {
                                         <View className="sport-tag">{student.sportType}</View>
                                     </View>
                                     <View className="student-course-row">
-                                        <Text className="student-course">课程：{student.courseName}</Text>
+                                    <Text className="student-course">服务：{student.courseName}</Text>
                                     </View>
                                     <View className={`student-hours ${student.remainingHours <= 3 ? 'low' : ''}`}>
                                         <Text>剩余 {student.remainingHours} 课时</Text>
@@ -256,7 +256,7 @@ const StudentsPage: React.FC = () => {
                                 />
                             </View>
                             <View className="form-item">
-                                <Text className="form-label">课程名称</Text>
+                                <Text className="form-label">服务名称</Text>
                                 <Input
                                     className="form-input"
                                     placeholder="例如：网球进阶班"
@@ -275,7 +275,7 @@ const StudentsPage: React.FC = () => {
                                     />
                                 </View>
                                 <View className="form-item half">
-                                    <Text className="form-label">课程单价</Text>
+                                <Text className="form-label">服务单价</Text>
                                     <Input
                                         className="form-input"
                                         type="digit"

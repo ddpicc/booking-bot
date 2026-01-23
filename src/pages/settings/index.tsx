@@ -104,13 +104,20 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // 课程管理相关状态
+  // 服务管理相关状态
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
   const [serviceName, setServiceName] = useState('');
   const [serviceDuration, setServiceDuration] = useState(60);
   const [serviceHasGap, setServiceHasGap] = useState(false);
   const [serviceGapMinutes, setServiceGapMinutes] = useState(0);
+  const handleOpenQr = () => {
+    if (!coachId) {
+      Taro.showToast({ title: '请先完成登录绑定', icon: 'none' });
+      return;
+    }
+    Taro.navigateTo({ url: `/pages/qrcode/index?coachId=${coachId}&coachName=${encodeURIComponent(displayName)}` });
+  };
 
   const handleSave = async () => {
     const newSettings = {
@@ -174,13 +181,13 @@ const SettingsPage: React.FC = () => {
 
     if (editingService) {
       updateService(editingService.id, payload);
-      Taro.showToast({ title: '已更新课程', icon: 'success' });
+      Taro.showToast({ title: '已更新服务', icon: 'success' });
     } else {
       addService({
         id: `s-${Date.now()}`,
         ...payload,
       });
-      Taro.showToast({ title: '已添加课程', icon: 'success' });
+      Taro.showToast({ title: '已添加服务', icon: 'success' });
     }
     // 同步全局课间休息默认值
     setBufferTime(serviceHasGap ? serviceGapMinutes : bufferTime);
@@ -190,7 +197,7 @@ const SettingsPage: React.FC = () => {
   const handleDeleteService = (id: string) => {
     Taro.showModal({
       title: '删除确认',
-      content: '确定要删除这个课程吗？',
+      content: '确定要删除这个服务吗？',
       success: (res) => {
         if (res.confirm) {
           deleteService(id);
@@ -215,14 +222,15 @@ const SettingsPage: React.FC = () => {
               <Text className="settings-coach-id">ID: {coachId}</Text>
             </View>
           </View>
+          <Button className="settings-qr-btn" onClick={handleOpenQr}>专属二维码</Button>
         </View>
 
         <View className="settings-section-card no-padding">
           <View className="settings-section-header-row padding-h">
-            <Text className="settings-section-heading">课程配置</Text>
+            <Text className="settings-section-heading">服务配置</Text>
             <View className="settings-add-btn" onClick={() => handleOpenServiceModal()}>
               <Text className="material-symbols-outlined">add</Text>
-              <Text>添加课程</Text>
+              <Text>添加服务</Text>
             </View>
           </View>
 
@@ -233,7 +241,7 @@ const SettingsPage: React.FC = () => {
                   <Text className="settings-service-name">{service.name}</Text>
                   <View className="settings-service-tags">
                     <Text className="settings-service-tag">{service.duration} 分钟</Text>
-                    {service.hasGap && <Text className="settings-service-tag gap">课间 {service.gapMinutes || 0} 分钟</Text>}
+                    {service.hasGap && <Text className="settings-service-tag gap">间隔 {service.gapMinutes || 0} 分钟</Text>}
                   </View>
                 </View>
                 <View className="settings-service-actions">
@@ -252,7 +260,7 @@ const SettingsPage: React.FC = () => {
             ))}
             {services.length === 0 && (
               <View className="settings-empty-state">
-                <Text>暂无课程配置，请点击上方添加</Text>
+                <Text>暂无服务配置，请点击上方添加</Text>
               </View>
             )}
           </View>
@@ -343,7 +351,7 @@ const SettingsPage: React.FC = () => {
             </View>
             <View className="settings-list-item no-border">
               <View className="settings-list-text no-icon">
-                <Text className="settings-list-title">每日限接5节课</Text>
+                <Text className="settings-list-title">每日限接5单服务</Text>
               </View>
               <Switch
                 checked={dailyLimit}
@@ -360,18 +368,18 @@ const SettingsPage: React.FC = () => {
         <Text className="settings-footer-hint">更改将立即应用于所有未来的预约。当前的预约将不受影响。</Text>
       </ScrollView>
 
-      {/* 课程编辑 Modal */}
+      {/* 服务编辑 Modal */}
       {showServiceModal && (
         <View className="settings-modal-overlay">
           <View className="settings-modal">
             <View className="settings-modal-header">
-              <Text className="settings-modal-title">{editingService ? '编辑课程' : '添加课程'}</Text>
+              <Text className="settings-modal-title">{editingService ? '编辑服务' : '添加服务'}</Text>
               <Text className="settings-modal-close" onClick={() => setShowServiceModal(false)}>✕</Text>
             </View>
             <View className="settings-modal-content">
               <View className="settings-modal-form">
                 <View className="settings-form-item">
-                  <Text className="settings-form-label">课程名称</Text>
+                  <Text className="settings-form-label">服务名称</Text>
                   <Input
                     className="settings-form-input"
                     value={serviceName}
@@ -380,7 +388,7 @@ const SettingsPage: React.FC = () => {
                   />
                 </View>
                 <View className="settings-form-item">
-                  <Text className="settings-form-label">课程时长（分钟）</Text>
+                  <Text className="settings-form-label">服务时长（分钟）</Text>
                   <View className="settings-duration-selector">
                     {[30, 45, 60, 90, 120].map(d => (
                       <View
@@ -403,7 +411,7 @@ const SettingsPage: React.FC = () => {
                 <View className="settings-form-item row">
                   <View>
                     <Text className="settings-form-label">是否有休息间隔</Text>
-                    <Text className="settings-form-hint">课程结束后是否留出缓冲时间</Text>
+                    <Text className="settings-form-hint">服务结束后是否留出缓冲时间</Text>
                   </View>
                   <Switch
                     checked={serviceHasGap}
@@ -413,10 +421,10 @@ const SettingsPage: React.FC = () => {
                 </View>
                 {serviceHasGap && (
                   <View className="settings-form-item">
-                    <Text className="settings-form-label">课间休息时长</Text>
+                    <Text className="settings-form-label">服务间隔时长</Text>
                     <View className="settings-buffer-row">
                       <Text className="settings-buffer-value">{serviceGapMinutes} 分钟</Text>
-                      <Text className="settings-buffer-label">为该课程设置专属缓冲</Text>
+                      <Text className="settings-buffer-label">为该服务设置专属缓冲</Text>
                     </View>
                     <Slider
                       className="settings-slider"

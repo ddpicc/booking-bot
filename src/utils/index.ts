@@ -87,7 +87,7 @@ export const validateBooking = (
   if (futureDays > settings.maxFutureDays) {
     return {
       valid: false,
-      message: `最多只能预约未来 ${settings.maxFutureDays} 天的课程`,
+      message: `最多只能预约未来 ${settings.maxFutureDays} 天的服务`,
     };
   }
 

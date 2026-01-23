@@ -194,7 +194,7 @@ const CoachHome: React.FC = () => {
         studentName,
         phoneNumber,
         serviceId: selectedService?.id || 'manual',
-        serviceName: selectedService?.name || '代开课程',
+        serviceName: selectedService?.name || '代开服务',
         startTime: start.toISOString(),
         endTime: end.toISOString(),
         status: 'confirmed'
@@ -384,7 +384,7 @@ const CoachHome: React.FC = () => {
                 </View>
                 <View className="coach-alert-text">
                   <Text className="coach-alert-title">{pendingCount} 个待处理预约</Text>
-                  <Text className="coach-alert-subtitle">请确认学员的课程申请</Text>
+                  <Text className="coach-alert-subtitle">请确认学员的服务申请</Text>
                 </View>
               </View>
             </View>
@@ -437,7 +437,7 @@ const CoachHome: React.FC = () => {
                     <View className={`coach-booking-card ${item.type === 'locked' ? 'locked' : item.status} ${variantClass}`}>
                       <View className="coach-booking-header">
                         <View>
-                          <Text className="coach-booking-type">{item.type === 'locked' ? '锁定' : (booking.serviceName || '课程')}</Text>
+                          <Text className="coach-booking-type">{item.type === 'locked' ? '锁定' : (booking.serviceName || '服务')}</Text>
                           <Text className="coach-booking-title">{item.type === 'locked' ? booking.lockReason : `学员: ${booking.studentName}`}</Text>
                         </View>
                         <Text className="material-symbols-outlined coach-booking-icon">
@@ -481,7 +481,7 @@ const CoachHome: React.FC = () => {
             <View className="coach-lock-modal-header">
               <View className="coach-lock-modal-tabs">
                 <View className={`coach-lock-modal-tab ${modalMode === 'lock' ? 'active' : ''}`} onClick={() => setModalMode('lock')}>锁定时间</View>
-                <View className={`coach-lock-modal-tab ${modalMode === 'booking' ? 'active' : ''}`} onClick={() => setModalMode('booking')}>代开课程</View>
+                <View className={`coach-lock-modal-tab ${modalMode === 'booking' ? 'active' : ''}`} onClick={() => setModalMode('booking')}>代开服务</View>
               </View>
               <Text className="coach-lock-modal-close" onClick={handleCloseModal}>✕</Text>
             </View>

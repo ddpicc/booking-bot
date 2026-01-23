@@ -3,7 +3,8 @@ export default defineAppConfig({
     'pages/coach/index',
     'pages/students/index',
     'pages/settings/index',
-    'pages/chat/index'
+    'pages/chat/index',
+    'pages/qrcode/index'
   ],
   cloud: true,
   cloudEnvId: 'cloud1-8go2n6w41a48657b',

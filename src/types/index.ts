@@ -32,7 +32,7 @@ export interface CoachSettings {
   autoAccept?: boolean; // 自动接受预约
   allowCancelWithin24h?: boolean; // 允许24小时内取消
   dailyLimitEnabled?: boolean; // 每日接单上限开关
-  defaultServiceDuration?: number; // 默认课程时长
+  defaultServiceDuration?: number; // 默认服务时长
   workingHours: {
     monday: { start: string; end: string } | null;
     tuesday: { start: string; end: string } | null;

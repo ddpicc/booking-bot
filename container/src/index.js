@@ -357,6 +357,21 @@ app.post('/api/call', async (req, res) => {
                 const result = await db.collection(CLIENTS_COLLECTION).where({ openid: OPENID }).get();
                 return res.json({ ok: true, data: result.data[0] || null });
             }
+            if (action === 'bindCoach') {
+                if (!data.coachId) return res.status(400).json({ ok: false, message: 'coachId 必填' });
+                const existing = await db.collection(CLIENTS_COLLECTION).where({ openid: OPENID }).limit(1).get();
+                const payload = {
+                    coachId: data.coachId,
+                    name: data.name || (existing.data[0]?.name) || '',
+                    updatedAt: new Date()
+                };
+                if (existing.data.length > 0) {
+                    await db.collection(CLIENTS_COLLECTION).doc(existing.data[0]._id).update({ data: payload });
+                    return res.json({ ok: true, id: existing.data[0]._id, updated: true });
+                }
+                const createRes = await db.collection(CLIENTS_COLLECTION).add({ openid: OPENID, ...payload, createdAt: new Date() });
+                return res.json({ ok: true, id: createRes._id, created: true });
+            }
         }
         if (service === 'lock') {
             const effectiveCoachId = data.coachId;
@@ -477,6 +492,26 @@ app.post('/api/call', async (req, res) => {
         res.status(400).json({ ok: false, message: 'Invalid service/action' });
     } catch (e) {
         res.status(500).json({ ok: false, message: e.message });
+    }
+});
+
+// 生成专属小程序码（云托管版）
+app.post('/api/qrcode', async (req, res) => {
+    const { coachId } = req.body || {};
+    if (!coachId) return res.status(400).json({ ok: false, message: 'coachId is required' });
+    try {
+        const codeRes = await cloud.openapi.wxacode.getUnlimited({
+            scene: encodeURIComponent(coachId.slice(0, 32)),
+            page: 'pages/qrcode/index',
+            checkPath: false,
+            width: 280,
+            lineColor: { r: 0, g: 0, b: 0 },
+            envVersion: 'release'
+        });
+        const base64 = Buffer.from(codeRes.buffer).toString('base64');
+        res.json({ ok: true, imageBase64: base64 });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: error.message || 'generate qrcode failed' });
     }
 });
 

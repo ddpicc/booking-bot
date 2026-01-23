@@ -22,6 +22,7 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
+  position: relative;
 }
 
 .settings-coach-avatar-wrapper {
@@ -72,6 +73,19 @@
   font-weight: 700;
   color: #5f6368;
   letter-spacing: 0.5px;
+}
+
+.settings-qr-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1;
 }
 
 .settings-section-card {
