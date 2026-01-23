@@ -18,7 +18,17 @@ const cloud = cloudbase.init({
 const db = cloud.database();
 const _ = db.command;
 const USERS_COLLECTION = 'users';     // 小程序用户（教练）表
-const CLIENTS_COLLECTION = 'client'; // 教练名下的学员表
+const CLIENTS_COLLECTION = 'client';  // 教练名下的学员表
+
+// 生成短 coachId，避免 openid 过长且保持唯一
+const generateCoachId = async () => {
+    for (let i = 0; i < 5; i++) {
+        const candidate = `c${Math.random().toString(36).slice(2, 8)}`;
+        const exists = await db.collection(USERS_COLLECTION).where({ coachId: candidate }).limit(1).get();
+        if (exists.data.length === 0) return candidate;
+    }
+    return `c${Date.now().toString(36)}`;
+};
 
 // 中间件：日志打印
 app.use((req, res, next) => {
@@ -315,7 +325,10 @@ app.post('/api/call', async (req, res) => {
                 return res.json({ ok: true, data: { ...user, id: user._id || user.id } });
             }
             if (action === 'bindProfile') {
-                const resolvedCoachId = (data && data.coachId) || 'test_coach_001';
+                const incomingCoachId = data && data.coachId;
+                const existing = await db.collection(USERS_COLLECTION).where({ openid: OPENID }).limit(1).get();
+                const existingCoachId = existing.data?.[0]?.coachId;
+                const resolvedCoachId = existingCoachId || incomingCoachId || await generateCoachId();
                 const payload = {
                     openid: OPENID,
                     name: (data && data.name) || '教练',
@@ -324,7 +337,6 @@ app.post('/api/call', async (req, res) => {
                     role: 'coach',
                     updatedAt: new Date()
                 };
-                const existing = await db.collection(USERS_COLLECTION).where({ openid: OPENID }).limit(1).get();
                 if (existing.data.length > 0) {
                     const targetId = existing.data[0]._id;
                     await db.collection(USERS_COLLECTION).doc(targetId).update({ data: payload });

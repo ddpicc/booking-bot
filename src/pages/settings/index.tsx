@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Button, Switch, Slider, Input } from '@tarojs/components';
+import { View, Text, ScrollView, Button, Switch, Slider, Input, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useStore } from '../../store';
 import { callService } from '../../utils';
 import './index.css';
 
 const SettingsPage: React.FC = () => {
-  const { coachSettings, setCoachSettings, services, setServices, addService, updateService, deleteService } = useStore();
-  const coachId = 'test_coach_001'; // 统一测试 ID
+  const {
+    coachSettings,
+    setCoachSettings,
+    services,
+    setServices,
+    addService,
+    updateService,
+    deleteService,
+    currentUser,
+    setCurrentUser,
+  } = useStore();
+  const avatarPlaceholder = 'https://placehold.jp/32/1f2937/ffffff/200x200.png?text=%E5%A4%B4%E5%83%8F';
+  const [displayName, setDisplayName] = useState(currentUser?.name || '教练');
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatar || avatarPlaceholder);
+  const [coachId, setCoachId] = useState(currentUser?.coachId || 'test_coach_001');
 
   const [bufferTime, setBufferTime] = useState<number>(coachSettings.bufferTime || 15);
   const [minAdvance, setMinAdvance] = useState<number>(coachSettings.minAdvanceHours || 4);
@@ -18,13 +31,49 @@ const SettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   React.useEffect(() => {
-    fetchCoachData();
+    bootstrapUser();
   }, []);
 
-  const fetchCoachData = async () => {
+  React.useEffect(() => {
+    if (currentUser) {
+      setDisplayName(currentUser.name || '教练');
+      setAvatarUrl(currentUser.avatar || avatarPlaceholder);
+      setCoachId(currentUser.coachId || coachId);
+      fetchCoachData(currentUser.coachId || coachId);
+    }
+  }, [currentUser]);
+
+  const bootstrapUser = async () => {
+    try {
+      const res = await callService('auth', 'bootstrap', {}) as any;
+      const profile = res?.data?.data;
+      if (profile) {
+        const normalized = {
+          ...profile,
+          id: profile._id || profile.id,
+          coachId: profile.coachId || coachId,
+          name: profile.name || '教练',
+          avatar: profile.avatar || avatarPlaceholder,
+          role: 'coach',
+        };
+        setCurrentUser(normalized as any);
+        setDisplayName(normalized.name);
+        setAvatarUrl(normalized.avatar || avatarPlaceholder);
+        setCoachId(normalized.coachId || coachId);
+        fetchCoachData(normalized.coachId || coachId);
+        return;
+      }
+      fetchCoachData(coachId);
+    } catch (error) {
+      console.warn('[Settings] bootstrap user failed', error);
+      fetchCoachData(coachId);
+    }
+  };
+
+  const fetchCoachData = async (resolvedCoachId?: string) => {
     setLoading(true);
     try {
-      const res = await callService('booking', 'getCoach', { coachId }) as any;
+      const res = await callService('booking', 'getCoach', { coachId: resolvedCoachId || coachId }) as any;
       console.log('[Settings] Fetch Coach Response:', res);
       if (res?.data && res.data.ok) {
         // 兼容不同返回结构，安全合并默认值，避免 undefined
@@ -155,13 +204,13 @@ const SettingsPage: React.FC = () => {
       <ScrollView className="settings-content">
         <View className="settings-coach-card">
           <View className="settings-coach-avatar-wrapper">
-            <View className="settings-coach-avatar" />
+            <Image className="settings-coach-avatar-img" src={avatarUrl || avatarPlaceholder} mode="aspectFill" />
             <View className="settings-coach-status-dot" />
           </View>
           <View className="settings-coach-info">
-            <Text className="settings-coach-name">张伟教练</Text>
+            <Text className="settings-coach-name">{displayName}</Text>
             <View className="settings-coach-badge">
-              <Text className="settings-coach-id">ID: test_coach_001</Text>
+              <Text className="settings-coach-id">ID: {coachId}</Text>
             </View>
           </View>
         </View>
@@ -210,7 +259,7 @@ const SettingsPage: React.FC = () => {
         <View className="settings-section-card no-padding">
           <Text className="settings-section-heading padding-h">AI 助手测试</Text>
           <View className="settings-list">
-            <View className="settings-list-item no-border" onClick={() => Taro.navigateTo({ url: '/pages/chat/index?coachId=test_coach_001' })}>
+            <View className="settings-list-item no-border" onClick={() => Taro.navigateTo({ url: `/pages/chat/index?coachId=${coachId}` })}>
               <View className="settings-item-left">
                 <View className="settings-item-icon-box blue-lite">
                   <Text className="material-symbols-outlined">smart_toy</Text>
