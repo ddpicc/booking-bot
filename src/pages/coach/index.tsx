@@ -11,7 +11,7 @@ const avatarPlaceholder = 'https://placehold.jp/32/1f2937/ffffff/200x200.png?tex
 
 const CoachHome: React.FC = () => {
   const router = Taro.useRouter();
-  const coachIdFromQuery = router.params.coachId || 'test_coach_001';
+  const coachIdFromQuery = router.params.coachId || '';
   const [coachId, setCoachId] = useState(coachIdFromQuery);
 
   const {
@@ -41,6 +41,7 @@ const CoachHome: React.FC = () => {
 
   // 从云端获取数据
   const fetchData = useCallback(async (date: string) => {
+    if (!coachId) return;
     setLoading(true);
     try {
       console.log(`[Coach] Fetching data for ${date}, coachId: ${coachId}`);
@@ -122,7 +123,7 @@ const CoachHome: React.FC = () => {
     const savedProfile = Taro.getStorageSync('bookingbot_user');
     if (savedProfile && savedProfile.id) {
       setCurrentUser(savedProfile);
-      setCoachId(savedProfile.coachId || coachIdFromQuery);
+      setCoachId(savedProfile.coachId || '');
       setAvatarUrl(savedProfile.avatar || '');
       setNickName(savedProfile.name || '');
       setShowLoginOverlay(false);
@@ -310,7 +311,7 @@ const CoachHome: React.FC = () => {
     Taro.showLoading({ title: '提交中...' });
     try {
       const res = await callService('auth', 'bindProfile', {
-        coachId,
+        coachId: coachId || undefined,
         name: finalName,
         avatar: finalAvatar,
       }) as any;

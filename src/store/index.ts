@@ -31,11 +31,8 @@ type AppAction =
   | { type: 'UPDATE_STUDENT'; payload: { id: string; student: Partial<Student> } }
   | { type: 'DELETE_STUDENT'; payload: string };
 
-// 默认服务
-const defaultServices: Service[] = [
-  { id: '1', name: '基础课', duration: 60 },
-  { id: '2', name: '进阶课', duration: 90 },
-];
+// 默认服务（云端为空时默认空列表，由设置页拉取云端数据填充）
+const defaultServices: Service[] = [];
 
 // 默认设置
 const defaultSettings: CoachSettings = {

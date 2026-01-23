@@ -6,9 +6,9 @@ import { callService } from '../../utils';
 import './index.css';
 
 const StudentsPage: React.FC = () => {
-    const { students, setStudents, updateStudent } = useStore();
+    const { students, setStudents, updateStudent, currentUser } = useStore();
     const router = Taro.useRouter();
-    const coachId = router.params.coachId || 'test_coach_001';
+    const coachId = router.params.coachId || currentUser?.coachId || '';
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('全部');
     const [loading, setLoading] = useState(false);
@@ -24,8 +24,8 @@ const StudentsPage: React.FC = () => {
     const filters = ['全部', '羽毛球', '网球', '游泳', '篮球'];
 
     React.useEffect(() => {
-        fetchStudents();
-    }, []);
+        if (coachId) fetchStudents();
+    }, [coachId]);
 
     const fetchStudents = async () => {
         setLoading(true);

@@ -20,7 +20,7 @@ const SettingsPage: React.FC = () => {
   const avatarPlaceholder = 'https://placehold.jp/32/1f2937/ffffff/200x200.png?text=%E5%A4%B4%E5%83%8F';
   const [displayName, setDisplayName] = useState(currentUser?.name || '教练');
   const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatar || avatarPlaceholder);
-  const [coachId, setCoachId] = useState(currentUser?.coachId || 'test_coach_001');
+  const [coachId, setCoachId] = useState(currentUser?.coachId || '');
 
   const [bufferTime, setBufferTime] = useState<number>(coachSettings.bufferTime || 15);
   const [minAdvance, setMinAdvance] = useState<number>(coachSettings.minAdvanceHours || 4);
@@ -59,21 +59,23 @@ const SettingsPage: React.FC = () => {
         setCurrentUser(normalized as any);
         setDisplayName(normalized.name);
         setAvatarUrl(normalized.avatar || avatarPlaceholder);
-        setCoachId(normalized.coachId || coachId);
-        fetchCoachData(normalized.coachId || coachId);
+        setCoachId(normalized.coachId || '');
+        fetchCoachData(normalized.coachId || '');
         return;
       }
-      fetchCoachData(coachId);
+      if (coachId) fetchCoachData(coachId);
     } catch (error) {
       console.warn('[Settings] bootstrap user failed', error);
-      fetchCoachData(coachId);
+      if (coachId) fetchCoachData(coachId);
     }
   };
 
   const fetchCoachData = async (resolvedCoachId?: string) => {
     setLoading(true);
     try {
-      const res = await callService('booking', 'getCoach', { coachId: resolvedCoachId || coachId }) as any;
+      if (!resolvedCoachId && !coachId) return;
+      const currentCoachId = resolvedCoachId || coachId;
+      const res = await callService('booking', 'getCoach', { coachId: currentCoachId }) as any;
       console.log('[Settings] Fetch Coach Response:', res);
       if (res?.data && res.data.ok) {
         // 兼容不同返回结构，安全合并默认值，避免 undefined
@@ -82,7 +84,7 @@ const SettingsPage: React.FC = () => {
         const mergedSettings = {
           ...coachSettings,
           ...cloudSettings,
-          services: cloudSettings.services || coachSettings.services || [],
+          services: cloudSettings.services || [],
         };
 
         setCoachSettings(mergedSettings);

@@ -178,14 +178,11 @@ app.post('/api/assistant', async (req, res) => {
         const studentRes = await db.collection(CLIENTS_COLLECTION).where({ openid: OPENID }).get();
         if (studentRes.data.length > 0) {
             studentInfo = studentRes.data[0];
-            const isPlaceholder = !effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888';
+            const isPlaceholder = !effectiveCoachId;
             if (isPlaceholder) effectiveCoachId = studentInfo.coachId;
         }
 
-        // 3. Fallback to default
-        if (!effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888') {
-            effectiveCoachId = 'test_coach_001';
-        }
+        // 3. 无绑定则保持空，由模型提示
 
         // 2. 姓名模糊匹配
         if (mentionedCoachName) {
@@ -289,7 +286,7 @@ app.post('/api/assistant', async (req, res) => {
         if (message.tool_calls) {
             currentMessages.push(message);
             for (const toolCall of message.tool_calls) {
-                const rawResult = await handleToolCall(toolCall, effectiveCoachId || 'test_coach_001', OPENID);
+                const rawResult = await handleToolCall(toolCall, effectiveCoachId, OPENID);
                 currentMessages.push({
                     role: 'tool',
                     tool_call_id: toolCall.id,
@@ -326,9 +323,10 @@ app.post('/api/call', async (req, res) => {
             }
             if (action === 'bindProfile') {
                 const incomingCoachId = data && data.coachId;
+                const normalizedIncoming = incomingCoachId || null;
                 const existing = await db.collection(USERS_COLLECTION).where({ openid: OPENID }).limit(1).get();
                 const existingCoachId = existing.data?.[0]?.coachId;
-                const resolvedCoachId = existingCoachId || incomingCoachId || await generateCoachId();
+                const resolvedCoachId = existingCoachId || normalizedIncoming || await generateCoachId();
                 const payload = {
                     openid: OPENID,
                     name: (data && data.name) || '教练',
@@ -348,7 +346,7 @@ app.post('/api/call', async (req, res) => {
         }
         if (service === 'students') {
             if (action === 'list') {
-                const result = await db.collection(CLIENTS_COLLECTION).where({ coachId: data.coachId || 'test_coach_001' }).get();
+                const result = await db.collection(CLIENTS_COLLECTION).where({ coachId: data.coachId }).get();
                 return res.json({ ok: true, data: result.data });
             }
             if (action === 'create') {
@@ -361,7 +359,7 @@ app.post('/api/call', async (req, res) => {
             }
         }
         if (service === 'lock') {
-            const effectiveCoachId = data.coachId || 'test_coach_001';
+            const effectiveCoachId = data.coachId;
             if (action === 'listByDate') {
                 const { start, end } = getDayRange(data.date);
                 console.log(`[Lock] Querying: coachId=${effectiveCoachId}, date=${data.date}`);
@@ -407,7 +405,7 @@ app.post('/api/call', async (req, res) => {
             }
         }
         if (service === 'booking') {
-            const effectiveCoachId = data.coachId || 'test_coach_001';
+            const effectiveCoachId = data.coachId;
             if (action === 'create') {
                 const start = toDate(data.startTime);
                 const end = toDate(data.endTime);
@@ -452,11 +450,16 @@ app.post('/api/call', async (req, res) => {
                 return res.json({ ok: true });
             }
             if (action === 'getCoach') {
-                const result = await db.collection('coach_settings').doc(data.coachId).get();
-                return res.json({ ok: true, data: result.data });
+                try {
+                    const result = await db.collection('coach_settings').doc(data.coachId).get();
+                    return res.json({ ok: true, data: result.data || {} });
+                } catch (err) {
+                    // 不存在则返回空对象
+                    return res.json({ ok: true, data: {} });
+                }
             }
             if (action === 'updateCoach') {
-                const coachId = data.coachId || 'test_coach_001';
+                const coachId = data.coachId;
                 const payload = {
                     settings: data.settings || {},
                     updatedAt: new Date()

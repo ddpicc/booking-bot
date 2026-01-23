@@ -13,7 +13,7 @@ exports.main = async (event, context) => {
         if (action === 'list') {
             // 获取当前教练绑定的所有学员
             // 注意：在多教练场景下，系统会根据身份识别教练 ID
-            const coachId = event.coachId || 'coach';
+            const coachId = event.coachId;
             const res = await db.collection('students').where({
                 coachId: coachId
             }).get();
@@ -29,7 +29,7 @@ exports.main = async (event, context) => {
 
         if (action === 'create') {
             const studentData = event.data;
-            const coachId = event.coachId || 'COACH_88888';
+            const coachId = event.coachId;
             const payload = {
                 ...studentData,
                 coachId: coachId,

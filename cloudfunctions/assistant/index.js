@@ -258,15 +258,9 @@ exports.main = async (event, context) => {
     const studentRes = await db.collection(CLIENTS_COLLECTION).where({ openid: OPENID }).get();
     if (studentRes.data.length > 0) {
         studentInfo = studentRes.data[0];
-        const isPlaceholder = !effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888';
-        if (isPlaceholder) {
+        if (!effectiveCoachId) {
             effectiveCoachId = studentInfo.coachId;
         }
-    }
-
-    // 3. Fallback to default
-    if (!effectiveCoachId || effectiveCoachId === 'coach' || effectiveCoachId === 'COACH_88888') {
-        effectiveCoachId = 'test_coach_001';
     }
 
     // 2. 如果用户提到了教练姓名，尝试匹配
